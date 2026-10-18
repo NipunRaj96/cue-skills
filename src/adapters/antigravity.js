@@ -7,7 +7,10 @@
 //   (conversationId, workspacePaths, modelName, transcriptPath; PreInvocation adds invocationNum).
 //   Probe file removed afterwards. settings.json untouched (it has no hooks key).
 // - So the CLI and the App/IDE read the same file: one merged adapter, "antigravity".
-// - Output: {"injectSteps":[{"ephemeralMessage":text}]} (transient, dropped after the turn).
+// - Output: SessionStart -> persistent systemMessage; PreInvocation -> transient ephemeralMessage. hooks.md:
+//   `{"systemMessage": {"systemMessage": "...", "metadata": {...}}}` (persists in the conversation trajectory across turns;
+//   note that `systemMessage` requires a nested object rather than a plain string)
+//   `{"ephemeralMessage": "..."}` (plain string; transient message dropped after the current turn)
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -76,6 +79,7 @@ export default {
     const m = PHASE[event];
     if (!m) return "";
     const { text } = run({ agent: "antigravity", session: input.conversationId, cwd: input.workspacePaths?.[0] ?? process.cwd(), ...m });
-    return text ? JSON.stringify({ injectSteps: [{ ephemeralMessage: text }] }) : "";
+    const step = event === "SessionStart" ? { systemMessage: { systemMessage: text } } : { ephemeralMessage: text };
+    return text ? JSON.stringify({ injectSteps: [step] }) : "";
   },
 };
