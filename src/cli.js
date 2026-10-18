@@ -94,7 +94,7 @@ export async function main(argv) {
         const extraDirs = rules.skillDirs.map(expandHome);
         const c = loadCatalog({ cwd, extraDirs });
         say(`${c.length} skills`);
-        for (const { root } of scanRoots({ cwd, extraDirs }))
+        for (const root of new Set(scanRoots({ cwd, extraDirs }).map((r) => r.root)))
           say(`  ${root}: ${c.filter((e) => e.path.startsWith(root + "/")).length}`);
         break;
       }
