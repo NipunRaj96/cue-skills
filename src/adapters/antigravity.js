@@ -6,7 +6,7 @@
 // - Live probe: agy -p reads ~/.gemini/config/hooks.json (global root); handlers got camelCase stdin
 //   (conversationId, workspacePaths, modelName, transcriptPath; PreInvocation adds invocationNum).
 //   Probe file removed afterwards. settings.json untouched (it has no hooks key).
-// - So the CLI and the App/IDE read the same file; both adapters write the same "cue-skills" entry.
+// - So the CLI and the App/IDE read the same file: one merged adapter, "antigravity".
 // - Output: {"injectSteps":[{"ephemeralMessage":text}]} (transient, dropped after the turn).
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -33,9 +33,9 @@ function load() {
 
 function install(cmd) {
   const d = load();
-  const mine = (d[NAME] ||= {});
-  if (!Object.values(d).some((v) => Object.values(v).some((l) => Array.isArray(l) && l.some(isOurs)))) {
-    for (const [ev, timeout] of SPEC) (mine[ev] ||= []).push({ type: "command", command: `${cmd} ${ev}`, timeout });
+  for (const [ev, timeout] of SPEC) {
+    if (Object.values(d).some((v) => Array.isArray(v[ev]) && v[ev].some(isOurs))) continue;
+    ((d[NAME] ||= {})[ev] ||= []).push({ type: "command", command: `${cmd} ${ev}`, timeout });
   }
   writeJson(file(), d);
   return `hooks installed in ${file()}.`;
@@ -46,13 +46,14 @@ function uninstall() {
   const d = load();
   let changed = false;
   for (const [name, hook] of Object.entries(d)) {
+    let touched = false;
     for (const [ev, list] of Object.entries(hook)) {
       if (!Array.isArray(list) || !list.some(isOurs)) continue;
-      changed = true;
+      touched = changed = true;
       const kept = list.filter((h) => !isOurs(h));
       if (kept.length) hook[ev] = kept; else delete hook[ev];
     }
-    if (changed && !Object.keys(hook).length) delete d[name];
+    if (touched && !Object.keys(hook).length) delete d[name];
   }
   if (changed) writeJson(file(), d);
 }
@@ -63,22 +64,18 @@ function isInstalled() {
 
 const PHASE = { SessionStart: { phase: "start" }, PreInvocation: { phase: "prompt", prompt: "" } };
 
-function make(id, label, status, detect) {
-  return {
-    id, label, status, detect, isInstalled,
-    install: (cmd) => `${label}: ${install(cmd)}`,
-    uninstall: () => { uninstall(); return `${label}: hooks removed from ${file()}.`; },
-    handle(event, input) {
-      const m = PHASE[event];
-      if (!m) return "";
-      const { text } = run({ agent: id, session: input.conversationId, cwd: input.workspacePaths?.[0] ?? process.cwd(), ...m });
-      return text ? JSON.stringify({ injectSteps: [{ ephemeralMessage: text }] }) : "";
-    },
-  };
-}
+const agy = () => { try { execFileSync("which", ["agy"], { stdio: "ignore" }); return true; } catch { return false; } };
+const label = "Antigravity (CLI + App/IDE)";
 
-export const antigravityCli = make("antigravity-cli", "Antigravity CLI", "tested", () => {
-  try { execFileSync("which", ["agy"], { stdio: "ignore" }); return true; } catch { return false; }
-});
-export const antigravityApp = make("antigravity-app", "Antigravity App/IDE", "experimental", () =>
-  ["/Applications/Antigravity.app", "/Applications/Antigravity IDE.app"].some(existsSync));
+export default {
+  id: "antigravity", label, status: "tested", isInstalled,
+  detect: () => agy() || ["/Applications/Antigravity.app", "/Applications/Antigravity IDE.app"].some(existsSync),
+  install: (cmd) => `${label}: ${install(cmd)}`,
+  uninstall: () => { uninstall(); return `${label}: hooks removed from ${file()}.`; },
+  handle(event, input) {
+    const m = PHASE[event];
+    if (!m) return "";
+    const { text } = run({ agent: "antigravity", session: input.conversationId, cwd: input.workspacePaths?.[0] ?? process.cwd(), ...m });
+    return text ? JSON.stringify({ injectSteps: [{ ephemeralMessage: text }] }) : "";
+  },
+};

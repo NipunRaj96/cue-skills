@@ -24,23 +24,21 @@ function fixture() {
 const AG = (h) => join(h, ".gemini/config/hooks.json");
 
 test("registered in index", () => {
-  assert.deepEqual(adapters.map((a) => a.id).slice(3), ["antigravity-cli", "antigravity-app", "cursor"]);
+  assert.deepEqual(adapters.map((a) => a.id).slice(3), ["antigravity", "cursor"]);
 });
 
 test("antigravity install: named hook, flat events, foreign kept, idempotent, uninstall", () => {
   const { h } = fixture();
   const foreign = { other: { PreToolUse: [{ matcher: "*", hooks: [{ command: "keep" }] }] } };
   writeJson(AG(h), foreign);
-  for (const id of ["antigravity-cli", "antigravity-app"]) get(id).install(CMD(id));
-  get("antigravity-cli").install(CMD("antigravity-cli"));
+  get("antigravity").install(CMD("antigravity")); get("antigravity").install(CMD("antigravity"));
   const f = readJson(AG(h));
   assert.deepEqual(f.other, foreign.other);
-  assert.deepEqual(f["cue-skills"].SessionStart, [{ type: "command", command: CMD("antigravity-cli") + " SessionStart", timeout: 5 }]);
+  assert.deepEqual(f["cue-skills"].SessionStart, [{ type: "command", command: CMD("antigravity") + " SessionStart", timeout: 5 }]);
   assert.equal(f["cue-skills"].PreInvocation.length, 1);
-  assert.ok(get("antigravity-cli").isInstalled());
-  get("antigravity-cli").uninstall();
+  assert.ok(get("antigravity").isInstalled());
+  get("antigravity").uninstall();
   assert.deepEqual(readJson(AG(h)), foreign);
-  assert.ok(!get("antigravity-app").isInstalled());
 });
 
 test("antigravity odd shape / bad json not modified", () => {
@@ -48,28 +46,53 @@ test("antigravity odd shape / bad json not modified", () => {
   mkdirSync(join(h, ".gemini/config"), { recursive: true });
   for (const raw of ['[]', '{"x":"y"}', '{"x":{"SessionStart":{}}}']) {
     writeFileSync(AG(h), raw);
-    assert.throws(() => get("antigravity-cli").install(CMD("a")), /unexpected hooks shape, not modified/);
+    assert.throws(() => get("antigravity").install(CMD("a")), /unexpected hooks shape, not modified/);
     assert.equal(readFileSync(AG(h), "utf8"), raw);
   }
   writeFileSync(AG(h), "{oops");
-  assert.throws(() => get("antigravity-cli").install(CMD("a")), /invalid JSON, not modified/);
+  assert.throws(() => get("antigravity").install(CMD("a")), /invalid JSON, not modified/);
 });
 
-test("antigravity detect", () => {
+test("antigravity detect via agy on PATH", () => {
   fixture();
-  assert.equal(typeof get("antigravity-cli").detect(), "boolean");
-  assert.equal(typeof get("antigravity-app").detect(), "boolean");
+  const bin = mkdtempSync(join(tmpdir(), "bin-"));
+  writeFileSync(join(bin, "agy"), "#!/bin/sh\n", { mode: 0o755 });
+  const old = process.env.PATH;
+  process.env.PATH = `${bin}:${old}`;
+  try { assert.equal(get("antigravity").detect(), true); } finally { process.env.PATH = old; }
+});
+
+test("uninstall keeps empty foreign entries", () => {
+  const { h } = fixture();
+  writeJson(AG(h), { other: {}, keep: { enabled: false } });
+  get("antigravity").install(CMD("antigravity"));
+  get("antigravity").uninstall();
+  assert.deepEqual(readJson(AG(h)), { other: {}, keep: { enabled: false } });
+});
+
+test("install repairs partial, no empty cue-skills when already installed", () => {
+  const { h } = fixture();
+  const cmd = CMD("antigravity") + " SessionStart";
+  writeJson(AG(h), { "cue-skills": { SessionStart: [{ type: "command", command: cmd, timeout: 5 }] } });
+  get("antigravity").install(CMD("antigravity"));
+  const f = readJson(AG(h))["cue-skills"];
+  assert.equal(f.SessionStart.length, 1);
+  assert.equal(f.PreInvocation.length, 1);
+  // already ours under a foreign name: no cue-skills key created
+  writeJson(AG(h), { mine: { SessionStart: [{ command: cmd }], PreInvocation: [{ command: CMD("antigravity") + " PreInvocation" }] } });
+  get("antigravity").install(CMD("antigravity"));
+  assert.equal(readJson(AG(h))["cue-skills"], undefined);
 });
 
 test("antigravity output shape", () => {
   const { cwd } = fixture();
-  const out = JSON.parse(get("antigravity-cli").handle("SessionStart", { conversationId: "c1", workspacePaths: [cwd] }));
+  const out = JSON.parse(get("antigravity").handle("SessionStart", { conversationId: "c1", workspacePaths: [cwd] }));
   assert.match(out.injectSteps[0].ephemeralMessage, /## Skill: caveman/);
   // PreInvocation: bodies already sent -> reminder only
-  const pre = JSON.parse(runHook("antigravity-cli", "PreInvocation", JSON.stringify({ conversationId: "c1", workspacePaths: [cwd] })));
+  const pre = JSON.parse(runHook("antigravity", "PreInvocation", JSON.stringify({ conversationId: "c1", workspacePaths: [cwd] })));
   assert.match(pre.injectSteps[0].ephemeralMessage, /^Active skills: caveman \(terse\)\.$/);
-  assert.equal(get("antigravity-app").id, "antigravity-app");
-  assert.equal(runHook("antigravity-app", "Stop", JSON.stringify({ conversationId: "c1" })), "");
+  assert.equal(get("antigravity").id, "antigravity");
+  assert.equal(runHook("antigravity", "Stop", JSON.stringify({ conversationId: "c1" })), "");
 });
 
 test("cursor install keeps foreign + output shape", () => {
@@ -112,4 +135,16 @@ test("sync creates file + cursor rule", () => {
   const m = readFileSync(join(cwd, ".cursor/rules/cue-skills.mdc"), "utf8");
   assert.ok(m.startsWith("---\ndescription: cue-skills active skills\nalwaysApply: true\n---\n"));
   assert.match(m, /## Skill: caveman/);
+});
+
+test("sync unmatched START replaced to EOF, .bak once", () => {
+  const { cwd } = fixture();
+  writeFileSync(join(cwd, "AGENTS.md"), "# Mine\n<!-- cue-skills:start -->\nstale\n");
+  syncAgentsMd(cwd);
+  const t = readFileSync(join(cwd, "AGENTS.md"), "utf8");
+  assert.equal(t.split("<!-- cue-skills:start -->").length, 2);
+  assert.ok(t.includes("<!-- cue-skills:end -->") && !t.includes("stale") && t.startsWith("# Mine"));
+  assert.ok(readFileSync(join(cwd, "AGENTS.md.bak"), "utf8").includes("stale"));
+  syncAgentsMd(cwd);
+  assert.ok(readFileSync(join(cwd, "AGENTS.md.bak"), "utf8").includes("stale"));
 });
