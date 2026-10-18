@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync, renameSync } from "node:fs";
+import { existsSync, readFileSync, mkdirSync, copyFileSync } from "node:fs";
+import { atomicWrite } from "./jsonfile.js";
 import { join } from "node:path";
 import { projectRoot, expandHome } from "./paths.js";
 import { loadRules } from "./rules.js";
@@ -11,9 +12,7 @@ const END = "<!-- cue-skills:end -->";
 
 function write(f, text) {
   if (existsSync(f) && !existsSync(f + ".bak")) copyFileSync(f, f + ".bak");
-  const tmp = `${f}.tmp-${process.pid}`;
-  writeFileSync(tmp, text);
-  renameSync(tmp, f);
+  atomicWrite(f, text);
 }
 
 export function syncAgentsMd(cwd) {

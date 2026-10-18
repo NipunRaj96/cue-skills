@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, renameSync, copyFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, renameSync, copyFileSync, mkdirSync, existsSync, realpathSync, statSync } from "node:fs";
 import { dirname } from "node:path";
 
 export function readJson(path, fallback) {
@@ -9,7 +9,13 @@ export function readJson(path, fallback) {
 export function writeJson(path, data) {
   mkdirSync(dirname(path), { recursive: true });
   if (existsSync(path) && !existsSync(path + ".bak")) copyFileSync(path, path + ".bak");
-  const tmp = `${path}.tmp-${process.pid}`;
-  writeFileSync(tmp, JSON.stringify(data, null, 2) + "\n");
-  renameSync(tmp, path);
+  atomicWrite(path, JSON.stringify(data, null, 2) + "\n");
+}
+
+// tmp next to the real path (symlinks kept), original mode kept
+export function atomicWrite(path, text) {
+  const real = existsSync(path) ? realpathSync(path) : path;
+  const tmp = `${real}.tmp-${process.pid}`;
+  writeFileSync(tmp, text, existsSync(real) ? { mode: statSync(real).mode & 0o777 } : undefined);
+  renameSync(tmp, real);
 }

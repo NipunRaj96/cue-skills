@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync, chmodSync, statSync, symlinkSync, lstatSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseSkill } from "../src/frontmatter.js";
 import { globToRegExp } from "../src/glob.js";
 import { projectRoot, expandHome, cueDir, home } from "../src/paths.js";
 import { readJson, writeJson } from "../src/jsonfile.js";
+import { syncAgentsMd } from "../src/sync.js";
 
 const tmp = () => realpathSync(mkdtempSync(join(tmpdir(), "cue-")));
 
@@ -64,4 +65,30 @@ test("writeJson makes .bak once, atomic, mkdir -p", () => {
   writeJson(p, { v: 3 });
   assert.deepEqual(JSON.parse(readFileSync(p + ".bak", "utf8")), { v: 1 });
   assert.deepEqual(readJson(p), { v: 3 });
+});
+
+test("writeJson keeps mode and symlinks", () => {
+  const d = tmp();
+  writeFileSync(join(d, "a.json"), "{}");
+  chmodSync(join(d, "a.json"), 0o600);
+  writeJson(join(d, "a.json"), { x: 1 });
+  assert.equal(statSync(join(d, "a.json")).mode & 0o777, 0o600);
+  writeFileSync(join(d, "real.json"), "{}");
+  symlinkSync(join(d, "real.json"), join(d, "link.json"));
+  writeJson(join(d, "link.json"), { y: 2 });
+  assert.ok(lstatSync(join(d, "link.json")).isSymbolicLink());
+  assert.deepEqual(readJson(join(d, "real.json")), { y: 2 });
+});
+
+test("AGENTS.md sync keeps mode and symlinks", () => {
+  const d = tmp();
+  process.env.HOME = d;
+  mkdirSync(join(d, "p/.git"), { recursive: true });
+  writeFileSync(join(d, "p/real.md"), "mine\n");
+  chmodSync(join(d, "p/real.md"), 0o600);
+  symlinkSync(join(d, "p/real.md"), join(d, "p/AGENTS.md"));
+  syncAgentsMd(join(d, "p"));
+  assert.ok(lstatSync(join(d, "p/AGENTS.md")).isSymbolicLink());
+  assert.equal(statSync(join(d, "p/real.md")).mode & 0o777, 0o600);
+  assert.match(readFileSync(join(d, "p/real.md"), "utf8"), /^mine\n[\s\S]*cue-skills:start/);
 });
