@@ -7,6 +7,7 @@ import { cueDir } from "../paths.js";
 
 const SRC = fileURLToPath(new URL("../../plugins/openclaw/", import.meta.url));
 const ENGINE = pathToFileURL(fileURLToPath(new URL("../engine.js", import.meta.url))).href;
+const VERSION = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")).version;
 const copyDir = () => join(cueDir(), "openclaw-plugin");
 const bin = () => process.env.CUE_OPENCLAW_BIN || "openclaw";
 const onPath = () => (process.env.PATH || "").split(delimiter).some((d) => d && existsSync(join(d, "openclaw")));
@@ -20,14 +21,16 @@ export default {
     const dir = copyDir();
     mkdirSync(dir, { recursive: true });
     for (const f of readdirSync(SRC))
-      writeFileSync(join(dir, f), readFileSync(join(SRC, f), "utf8").split("__CUE_ENGINE__").join(ENGINE));
+      writeFileSync(join(dir, f), readFileSync(join(SRC, f), "utf8").split("__CUE_ENGINE__").join(ENGINE).split("__CUE_VERSION__").join(VERSION));
     exec(bin(), ["plugins", "install", dir], { stdio: "ignore" });
     return `OpenClaw: plugin installed from ${dir} (no extra config flags needed).`;
   },
   uninstall(_cmd, { exec = execFileSync } = {}) {
-    try { exec(bin(), ["plugins", "uninstall", "cue-skills", "--force"], { stdio: "ignore" }); } catch {}
+    let warn = "";
+    try { exec(bin(), ["plugins", "uninstall", "cue-skills", "--force"], { stdio: "ignore" }); }
+    catch (e) { warn = ` warning: openclaw uninstall failed: ${e.message}`; }
     rmSync(copyDir(), { recursive: true, force: true });
-    return "OpenClaw: plugin removed.";
+    return `OpenClaw: plugin files removed.${warn}`;
   },
   handle: () => "",
 };

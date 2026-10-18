@@ -59,10 +59,14 @@ function init(args) {
     copyFileSync(new URL("../templates/rules.yaml", import.meta.url), rules);
     say(`Created ${rules}`);
   }
-  const cmd = `"${process.execPath}" "${real}" hook`;
-  const install = (a) => a.install(`${cmd} ${a.id}`);
+  const q = (s) => `'${s.replace(/'/g, "'\\''")}'`;
+  const cmd = `${q(process.execPath)} ${q(real)} hook`;
+  const install = (a) => note(a, a.install(`${cmd} ${a.id}`));
   install.showStatus = true;
-  each(list.filter((a) => a.detect()), install);
+  const note = (a, msg) => (a.id === "gemini" ? `${msg} Hooks may need enabling in Gemini settings.` : msg);
+  const found = list.filter((a) => a.detect());
+  if (i >= 0) for (const a of list) if (!found.includes(a)) say(`- ${a.label}: not detected, skipped`);
+  each(found, install);
 }
 
 function status() {

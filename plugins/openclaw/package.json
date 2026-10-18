@@ -1,6 +1,6 @@
 {
   "name": "cue-skills-openclaw",
-  "version": "0.0.1",
+  "version": "__CUE_VERSION__",
   "private": true,
   "type": "module",
   "main": "./index.js",
