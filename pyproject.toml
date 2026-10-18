@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cue-skills"
-version = "0.0.1"
+version = "0.1.0"
 description = "Right skill, right moment. Makes coding agents use the right skill automatically."
 readme = "README.md"
 license = "MIT"
