@@ -12,7 +12,7 @@ const bin = () => process.env.CUE_OPENCLAW_BIN || "openclaw";
 const onPath = () => (process.env.PATH || "").split(delimiter).some((d) => d && existsSync(join(d, "openclaw")));
 
 export default {
-  id: "openclaw", label: "OpenClaw", status: "experimental",
+  id: "openclaw", label: "OpenClaw", status: "tested",
   detect: () => !!process.env.CUE_OPENCLAW_BIN || onPath(),
   isInstalled: () => existsSync(join(copyDir(), "index.js")),
   // `cmd` unused: no CLI hook. exec injectable for tests.

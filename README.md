@@ -26,11 +26,11 @@ Adapters for Claude Code, Antigravity, OpenCode, OpenClaw, Codex, Gemini CLI and
 npm i -g cue-skills && cue-skills init
 ```
 
-`init` detects the agents installed on your machine, registers Cue with each, and creates `~/.cue/rules.yaml` from a commented template if the file is missing. It needs Node 18 or later. A PyPI package (`pip install cue-skills`) runs the same CLI through `npx`.
+`init` detects the agents installed on your machine, registers Cue with each, and creates `~/.cue/rules.yaml` from a commented template if the file is missing. It needs Node 18 or later. A PyPI package (`pip install cue-skills`) runs the same CLI through `npx`, but PyPI users must still `npm i -g cue-skills` before running `cue-skills init`, because `init` refuses to run from the npx cache.
 
 ## Rules
 
-Rules live in `~/.cue/rules.yaml` (global) and `<project root>/.cue/rules.yaml` (project). Project lists append to global lists, and duplicates are dropped.
+Rules live in `~/.cue/rules.yaml` (global) and `<project root>/.cue/rules.yaml` (project). Project lists append to global lists, and duplicates are dropped. A project's `.cue/rules.yaml` can inject skill text, with the same trust level as a repo's CLAUDE.md.
 
 ```yaml
 always: [caveman, ponytail]       # active every session, in priority order
@@ -53,10 +53,10 @@ A surface is one config home. Products that share a config home between their CL
 
 | Product | Surfaces | Status |
 |---|---|---|
-| Claude Code | CLI, desktop Code tab, VS Code and JetBrains extensions | tested |
-| Antigravity | agy CLI, App and IDE (shared hooks file) | tested (CLI) |
-| OpenCode | TUI/CLI, desktop app | experimental |
-| OpenClaw | gateway, every channel | experimental |
+| Claude Code | CLI, desktop Code tab, VS Code and JetBrains extensions | tested (unit), live pending |
+| Antigravity | agy CLI, App and IDE (shared hooks file) | tested (agy CLI); App/IDE experimental |
+| OpenCode | TUI/CLI, desktop app | tested |
+| OpenClaw | gateway, every channel | tested |
 | Codex | CLI, IDE extension, desktop app | experimental |
 | Gemini CLI | CLI | experimental |
 | Cursor | IDE, `cursor-agent` CLI | experimental |
