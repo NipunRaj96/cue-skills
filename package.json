@@ -1,0 +1,13 @@
+{
+  "name": "cue-skills",
+  "version": "0.0.1",
+  "description": "Right skill, right moment. Makes coding agents use the right skill automatically.",
+  "license": "MIT",
+  "author": "Nipun Kumar <nipunraj2004@gmail.com>",
+  "homepage": "https://github.com/NipunRaj96/cue-skills",
+  "repository": { "type": "git", "url": "git+https://github.com/NipunRaj96/cue-skills.git" },
+  "bugs": { "url": "https://github.com/NipunRaj96/cue-skills/issues" },
+  "keywords": ["claude-code", "codex", "antigravity", "opencode", "agent-skills", "mcp"],
+  "bin": { "cue-skills": "bin/cue-skills.js" },
+  "files": ["bin"]
+}

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cue-skills"
+version = "0.0.1"
+description = "Right skill, right moment. Makes coding agents use the right skill automatically."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [{ name = "Nipun Kumar", email = "nipunraj2004@gmail.com" }]
+keywords = ["claude-code", "codex", "antigravity", "opencode", "agent-skills", "mcp"]
+classifiers = ["Development Status :: 1 - Planning"]
+
+[project.urls]
+Homepage = "https://github.com/NipunRaj96/cue-skills"
+Issues = "https://github.com/NipunRaj96/cue-skills/issues"
+
+[project.scripts]
+cue-skills = "cue_skills:main"
