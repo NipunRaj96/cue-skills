@@ -6,12 +6,15 @@
 //  - Gating: before_prompt_build is a prompt-injection hook (blocked only if
 //    plugins.entries.<id>.hooks.allowPromptInjection === false). It is NOT a conversation hook, so
 //    allowConversationAccess is not needed (only llm_input/llm_output/before_agent_finalize/agent_end).
-import { run } from "__CUE_ENGINE__";
+let engine;
+const load = async () => (engine ??= import("__CUE_ENGINE__").catch(() => null));
 
 export default function (api) {
   api.on("before_prompt_build", async (event, ctx) => {
     try {
-      const { text } = await run({
+      const mod = await load();
+      if (!mod) return {};
+      const { text } = await mod.run({
         agent: "openclaw",
         session: ctx?.sessionKey ?? ctx?.sessionId ?? "default",
         phase: "system",
@@ -19,6 +22,6 @@ export default function (api) {
         cwd: ctx?.workspaceDir ?? process.cwd(),
       });
       return text ? { appendSystemContext: text } : undefined;
-    } catch {}
+    } catch { return {}; }
   });
 }

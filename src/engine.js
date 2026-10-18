@@ -9,6 +9,7 @@ import { expandHome } from "./paths.js";
 const EMPTY = () => ({ text: "", skills: [] });
 
 export function run({ agent, session = "default", phase, reset = false, prompt = "", files = [], cwd }) {
+  cwd ??= process.cwd();
   if (process.env.CUE_DISABLE === "1") return EMPTY();
   try {
     const rules = loadRules(cwd);

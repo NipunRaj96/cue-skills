@@ -59,3 +59,19 @@ test("openclaw install copies plugin, execs CLI; plugin returns appendSystemCont
   assert.deepEqual(calls[1].slice(0, 2), ["openclaw", ["plugins", "uninstall", "cue-skills", "--force"]]);
   assert.ok(!a.isInstalled());
 });
+
+test("plugins with a missing engine load and do nothing", async () => {
+  const { h, cwd } = fixture();
+  const gone = pathToFileURL(join(h, "nope/engine.js")).href;
+  const render = (src, name) => {
+    const f = join(h, name);
+    writeFileSync(f, readFileSync(src, "utf8").split("__CUE_ENGINE__").join(gone));
+    return import(pathToFileURL(f).href);
+  };
+  const root = new URL("../plugins/", import.meta.url).pathname;
+  const oc = await (await render(join(root, "opencode/cue-skills.js"), "oc.mjs")).CueSkills({ directory: cwd });
+  assert.deepEqual(oc, {});
+  const handlers = {};
+  (await render(join(root, "openclaw/index.js"), "claw.mjs")).default({ on: (n, fn) => (handlers[n] = fn) });
+  assert.deepEqual(await handlers.before_prompt_build({ prompt: "x" }, { workspaceDir: cwd }), {});
+});
