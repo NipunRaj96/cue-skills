@@ -87,7 +87,8 @@ test("install repairs partial, no empty cue-skills when already installed", () =
 test("antigravity output shape", () => {
   const { cwd } = fixture();
   const out = JSON.parse(get("antigravity").handle("SessionStart", { conversationId: "c1", workspacePaths: [cwd] }));
-  assert.match(out.injectSteps[0].ephemeralMessage, /## Skill: caveman/);
+  assert.match(out.injectSteps[0].systemMessage.systemMessage, /## Skill: caveman/);
+  assert.equal(out.injectSteps[0].ephemeralMessage, undefined);
   // PreInvocation: bodies already sent -> reminder only
   const pre = JSON.parse(runHook("antigravity", "PreInvocation", JSON.stringify({ conversationId: "c1", workspacePaths: [cwd] })));
   assert.match(pre.injectSteps[0].ephemeralMessage, /^Active skills: caveman \(terse\)\.$/);
