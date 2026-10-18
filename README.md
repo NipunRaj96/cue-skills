@@ -9,9 +9,16 @@ Developers collect skills from GitHub (caveman, ponytail, superpowers, frontend-
 3. **The agent chooses poorly** once hundreds of skill descriptions crowd its context.
 4. **The agent forgets too.** Ten turns in, or after a context compaction, it drifts back to its defaults.
 
-Cue takes skill choice out of your memory and the agent's judgment. It applies your rules first, picks the remaining skills by meaning, fires at the right moments, re-enforces skills when the agent drifts, and shows the tokens it saved.
+Cue takes skill choice out of your memory and the agent's judgment:
 
-It is built for every coding agent: Claude Code, Codex, Antigravity, OpenCode, OpenClaw and others, in the CLI or the IDE.
+- It applies your rules: `always`, `never`, and `when` conditions on prompt words, files and project markers.
+- It injects the matching skills automatically through each agent's hooks or plugins.
+- It re-injects them after compaction and keeps a one-line reminder on every prompt, to fight drift.
+- It shows what it injected and why (`cue-skills why`).
+
+Picking skills by meaning and measuring token savings are planned.
+
+Adapters for Claude Code, Antigravity, OpenCode, OpenClaw, Codex, Gemini CLI and Cursor; see Supported surfaces.
 
 ## Install
 
@@ -31,7 +38,7 @@ never: [some-skill]               # never injected; wins over everything
 when:
   - prompt: [design, ui, landing page]   # case-insensitive word or phrase match on the user prompt
     use: [frontend-design]
-  - files: ["**/*.tsx", "**/*.css"]      # glob match on files the agent reads or edits
+  - files: ["**/*.tsx", "**/*.css"]      # glob match on files the agent reads or edits (Claude Code only)
     use: [frontend-design]
   - project: [next.config.js]            # marker file exists at the project root
     use: [frontend-design]
@@ -47,8 +54,7 @@ A surface is one config home. Products that share a config home between their CL
 | Product | Surfaces | Status |
 |---|---|---|
 | Claude Code | CLI, desktop Code tab, VS Code and JetBrains extensions | tested |
-| Antigravity | `agy` CLI | tested |
-| Antigravity | App and IDE | experimental |
+| Antigravity | agy CLI, App and IDE (shared hooks file) | tested (CLI) |
 | OpenCode | TUI/CLI, desktop app | experimental |
 | OpenClaw | gateway, every channel | experimental |
 | Codex | CLI, IDE extension, desktop app | experimental |

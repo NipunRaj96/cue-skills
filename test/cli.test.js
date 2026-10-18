@@ -77,7 +77,9 @@ test("scan, list, why, sync, usage", () => {
   assert.match(cue(h, ["scan"], "", proj).out, /^1 skills/);
   assert.match(cue(h, ["list"], "", proj).out, /foo\s+\[-\]\s+does foo/);
   cue(h, ["hook", "claude", "UserPromptSubmit"], "{}");
-  assert.equal(cue(h, ["why"]).status, 0);
+  const why = cue(h, ["why"]);
+  assert.equal(why.status, 0);
+  assert.match(why.out, / claude prompt/);
   assert.match(cue(h, ["sync"], "", proj).out, /AGENTS\.md/);
   assert.match(cue(h, ["wat"]).out, /usage/i);
 });
