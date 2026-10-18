@@ -1,3 +1,7 @@
 #!/usr/bin/env node
-import { main } from "../src/cli.js";
-main(process.argv.slice(2));
+try {
+  const { main } = await import("../src/cli.js");
+  await main(process.argv.slice(2));
+} catch (e) {
+  if (process.argv[2] !== "hook") throw e; // hooks fail open
+}

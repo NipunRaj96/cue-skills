@@ -55,6 +55,7 @@ test("openclaw install copies plugin, execs CLI; plugin returns appendSystemCont
   (await import(pathToFileURL(join(dir, "index.js")).href)).default({ on: (n, fn) => (handlers[n] = fn) });
   const r = await handlers.before_prompt_build({ prompt: "fix ui" }, { sessionKey: "k", workspaceDir: cwd });
   assert.match(r.appendSystemContext, /## Skill: frontend-design/);
+  for (const f of ["package.json", "openclaw.plugin.json"]) assert.equal(JSON.parse(readFileSync(join(dir, f), "utf8")).version, "0.1.0");
   a.uninstall("x", { exec: (...c) => calls.push(c) });
   assert.deepEqual(calls[1].slice(0, 2), ["openclaw", ["plugins", "uninstall", "cue-skills", "--force"]]);
   assert.ok(!a.isInstalled());
@@ -74,4 +75,13 @@ test("plugins with a missing engine load and do nothing", async () => {
   const handlers = {};
   (await render(join(root, "openclaw/index.js"), "claw.mjs")).default({ on: (n, fn) => (handlers[n] = fn) });
   assert.deepEqual(await handlers.before_prompt_build({ prompt: "x" }, { workspaceDir: cwd }), {});
+});
+
+test("openclaw uninstall reports CLI failure", () => {
+  fixture();
+  const a = get("openclaw");
+  a.install("x", { exec() {} });
+  const msg = a.uninstall("x", { exec() { throw new Error("boom"); } });
+  assert.match(msg, /warning: openclaw uninstall failed: boom/);
+  assert.ok(!a.isInstalled());
 });

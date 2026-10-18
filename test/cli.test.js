@@ -27,9 +27,15 @@ test("init installs detected, creates rules; uninstall removes", () => {
   assert.match(r.out, /✓ Claude Code/);
   assert.match(readFileSync(join(h, ".claude/settings.json"), "utf8"), /cue-skills.*hook claude/);
   assert.ok(existsSync(join(h, ".cue/rules.yaml")));
+  const n = () => (readFileSync(join(h, ".claude/settings.json"), "utf8").match(/"command"/g) || []).length;
+  const first = n();
+  assert.ok(first > 0);
+  assert.match(readFileSync(join(h, ".claude/settings.json"), "utf8"), /'[^']*cue-skills\.js' hook claude/); // single-quoted paths
+  cue(h, ["init"]);
+  assert.equal(n(), first); // idempotent
   r = cue(h, ["uninstall"]);
   assert.equal(r.status, 0, r.err);
-  assert.doesNotMatch(readFileSync(join(h, ".claude/settings.json"), "utf8"), /cue-skills hook/);
+  assert.equal(n(), 0);
 });
 
 test("init: bad config continues and exits 1; --only restricts; unknown id fails", () => {
@@ -46,7 +52,7 @@ test("init: bad config continues and exits 1; --only restricts; unknown id fails
   mkdirSync(join(h2, ".config/opencode"), { recursive: true });
   r = cue(h2, ["init", "--only", "opencode"]);
   assert.equal(r.status, 0);
-  assert.doesNotMatch(r.out, /Claude Code/);
+  assert.doesNotMatch(r.out, /✓ Claude Code/);
   assert.equal(cue(h2, ["init", "--only", "bogus"]).status, 1);
 });
 
@@ -87,4 +93,20 @@ test("scan, list, why, sync, usage", () => {
 test("--version", () => {
   assert.equal(cue(home(), ["--version"]).out, "0.1.0\n");
   assert.equal(cue(home(), ["-v"]).out, "0.1.0\n");
+});
+
+test("init --only reports undetected; gemini note; hook fails open if CLI import breaks", () => {
+  const h = home();
+  mkdirSync(join(h, ".gemini"));
+  writeFileSync(join(h, ".gemini/settings.json"), "{}");
+  const r = cue(h, ["init", "--only", "gemini,opencode"]);
+  assert.match(r.out, /- OpenCode: not detected, skipped/);
+  assert.match(r.out, /✓ Gemini CLI.*Hooks may need enabling in Gemini settings\./);
+  // a copy of the bin whose ../src/cli.js is missing: hook exits 0 silently
+  const d = home();
+  mkdirSync(join(d, "bin"));
+  writeFileSync(join(d, "bin/cue-skills.js"), readFileSync(BIN, "utf8"));
+  const x = spawnSync(process.execPath, [join(d, "bin/cue-skills.js"), "hook", "claude", "SessionStart"], { input: "{}" });
+  assert.equal(x.status, 0);
+  assert.equal(x.stdout.toString(), "");
 });

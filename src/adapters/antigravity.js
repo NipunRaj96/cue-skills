@@ -18,11 +18,12 @@ import { readJson, writeJson } from "../jsonfile.js";
 import { home } from "../paths.js";
 import { run } from "../engine.js";
 
-const MARK = "cue-skills hook";
+// matches `cue-skills hook` and `.../cue-skills.js' hook` (quoted bin path)
+const MARK = /cue-skills\S* hook/;
 const NAME = "cue-skills";
 const SPEC = [["SessionStart", 5], ["PreInvocation", 5]];
 const plain = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
-const isOurs = (h) => plain(h) && typeof h.command === "string" && h.command.includes(MARK);
+const isOurs = (h) => plain(h) && typeof h.command === "string" && MARK.test(h.command);
 const file = () => join(home(), ".gemini/config/hooks.json");
 
 function load() {

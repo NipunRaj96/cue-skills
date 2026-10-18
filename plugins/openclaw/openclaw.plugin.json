@@ -1,6 +1,7 @@
 {
   "id": "cue-skills",
   "name": "cue-skills",
+  "version": "__CUE_VERSION__",
   "description": "Forces the agent to load the skills you chose.",
   "configSchema": { "type": "object", "additionalProperties": false, "properties": {} }
 }
