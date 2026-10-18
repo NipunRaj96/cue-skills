@@ -6,18 +6,24 @@ import { run } from "../engine.js";
 
 const MARK = "cue-skills hook";
 
+const plain = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
+
 function load(file) {
-  try { return readJson(file, {}); } catch { throw new Error(`${file}: invalid JSON, not modified`); }
+  let data;
+  try { data = readJson(file, {}); } catch { throw new Error(`${file}: invalid JSON, not modified`); }
+  if (!plain(data) || ("hooks" in data && (!plain(data.hooks) || !Object.values(data.hooks).every(Array.isArray))))
+    throw new Error(`${file}: unexpected hooks shape, not modified`);
+  return data;
 }
-const cmds = (data) => Object.values(data.hooks || {}).flatMap((gs) => gs.flatMap((g) => g.hooks || []));
-const isOurs = (h) => typeof h.command === "string" && h.command.includes(MARK);
+const isOurs = (h) => plain(h) && typeof h.command === "string" && h.command.includes(MARK);
+const handlers = (g) => (plain(g) && Array.isArray(g.hooks) ? g.hooks : []);
 
 export function addHooks(file, spec, cmd) {
   const data = load(file);
   data.hooks ||= {};
   for (const { event, matcher, timeout } of spec) {
     const groups = (data.hooks[event] ||= []);
-    if (groups.flatMap((g) => g.hooks || []).some(isOurs)) continue;
+    if (groups.flatMap(handlers).some(isOurs)) continue;
     const group = { hooks: [{ type: "command", command: `${cmd} ${event}`, timeout }] };
     if (matcher) group.matcher = matcher;
     groups.push(group);
@@ -28,16 +34,26 @@ export function addHooks(file, spec, cmd) {
 export function removeHooks(file) {
   if (!existsSync(file)) return;
   const data = load(file);
+  let changed = false;
   for (const [event, groups] of Object.entries(data.hooks || {})) {
-    const kept = groups
-      .map((g) => ({ ...g, hooks: (g.hooks || []).filter((h) => !isOurs(h)) }))
-      .filter((g) => g.hooks.length);
-    if (kept.length) data.hooks[event] = kept; else delete data.hooks[event];
+    const kept = [];
+    for (const g of groups) {
+      if (!plain(g) || !Array.isArray(g.hooks)) { kept.push(g); continue; }
+      const hs = g.hooks.filter((h) => !isOurs(h));
+      if (hs.length === g.hooks.length) { kept.push(g); continue; }
+      changed = true;
+      if (hs.length) kept.push({ ...g, hooks: hs });
+    }
+    if (kept.length) data.hooks[event] = kept; else if (groups.length) { delete data.hooks[event]; }
   }
-  writeJson(file, data);
+  if (changed) writeJson(file, data);
 }
 
-export const hasHooks = (file) => existsSync(file) && cmds(load(file)).some(isOurs);
+export function hasHooks(file) {
+  try {
+    return existsSync(file) && Object.values(load(file).hooks || {}).flat().flatMap(handlers).some(isOurs);
+  } catch { return false; }
+}
 
 // Shared adapter factory. map: event -> (input) => engine args. suffix: extra install summary text.
 export function jsonAdapter({ id, label, status, dir, fileName, spec, map, detect = () => existsSync(join(home(), dir)), suffix = "" }) {
