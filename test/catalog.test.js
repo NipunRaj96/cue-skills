@@ -73,3 +73,11 @@ test("loadCatalog caches and rebuilds on mtime change", () => {
   utimesSync(root, t, t);
   assert.deepEqual(loadCatalog({ cwd }).map((e) => e.name), ["one", "two"]);
 });
+
+test("walk visits at most 5000 dirs per root", () => {
+  const { h, cwd } = fixture();
+  const root = join(h, ".claude/skills");
+  for (let i = 0; i < 5100; i++) mkdirSync(join(root, "d" + String(i).padStart(4, "0")), { recursive: true });
+  skill(join(root, "zzz"), "zzz");
+  assert.equal(buildCatalog(scanRoots({ cwd })).length, 0);
+});

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, realpathSync, readdirSync, utimesSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, realpathSync, statSync, readdirSync, utimesSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { run } from "../src/engine.js";
@@ -84,7 +84,7 @@ test("reminder format and truncation", () => {
 
 test("engine never throws; logs error", () => {
   const { h, cwd } = fixture();
-  mkdirSync(join(h, ".cue/catalog.json")); // dir where cache file goes: write fails
+  writeFileSync(join(h, ".cue/state"), ""); // file where state dir goes: save fails
   const r = run({ agent: "t", session: "s6", phase: "start", cwd });
   assert.deepEqual(r, { text: "", skills: [] });
   assert.ok(readLog(1)[0].error);
@@ -138,4 +138,29 @@ test("run without cwd defaults to process.cwd()", () => {
   mkdirSync(join(h, ".cue"), { recursive: true });
   writeFileSync(join(h, ".cue/rules.yaml"), "always: [s1]\n");
   for (const cwd of [undefined, null]) assert.match(run({ agent: "a", phase: "system", cwd }).text, /## Skill: s1/);
+});
+
+test("render budget counts Read lines; reminder reserve; descriptions collapse", () => {
+  const { cwd, mk } = fixture();
+  const ents = (n) => Array.from({ length: n }, (_, i) => ({ name: "n" + i, path: "/nope/" + "p".repeat(100) + i }));
+  assert.ok(renderFull(ents(200), 1000).length <= 1000);
+  assert.equal(reminder([{ name: "a", description: "x\n  y\t z" }]), "Active skills: a (x y z).");
+  writeFileSync(join(process.env.HOME, ".cue/rules.yaml"), "always: [big, caveman]\n");
+  mk("big", "x".repeat(8500));
+  const t = run({ agent: "t", session: "rb", phase: "start", cwd }).text;
+  assert.match(t, /## Skill: big\nRead /);
+  assert.match(t, /Active skills: /);
+  assert.ok(t.length <= 9000);
+});
+
+test("catalog cache write failure still runs; log rotates over 5MB", () => {
+  const { h, cwd } = fixture();
+  mkdirSync(join(h, ".cue/catalog.json")); // dir where cache file goes: write fails
+  assert.match(run({ agent: "t", session: "cf", phase: "system", cwd }).text, /## Skill: caveman/);
+  rmSync(join(h, ".cue/catalog.json"), { recursive: true });
+  const log = join(h, ".cue/log.jsonl");
+  writeFileSync(log, "x".repeat(5 * 1024 * 1024 + 1));
+  run({ agent: "t", session: "lr", phase: "system", cwd });
+  assert.equal(statSync(log + ".1").size, 5 * 1024 * 1024 + 1);
+  assert.ok(statSync(log).size < 5000);
 });

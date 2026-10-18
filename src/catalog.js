@@ -45,7 +45,7 @@ export function scanRoots({ cwd, extraDirs = [] }) {
 function walk(dir, depth, seen, out) {
   let real;
   try { real = realpathSync(dir); } catch { return; }
-  if (seen.has(real)) return;
+  if (seen.has(real) || seen.size >= 5000) return;
   seen.add(real);
   const file = join(dir, "SKILL.md");
   if (existsSync(file)) out.push(file);
@@ -83,7 +83,7 @@ export function loadCatalog({ cwd, extraDirs }) {
     if (c && c.key === key) return c.entries;
   } catch { /* corrupt cache: rebuild */ }
   const entries = buildCatalog(roots);
-  writeJson(file, { key, entries });
+  try { writeJson(file, { key, entries }); } catch { /* cache is optional */ }
   return entries;
 }
 

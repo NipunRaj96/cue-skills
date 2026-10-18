@@ -1,7 +1,7 @@
 import { loadCatalog } from "./catalog.js";
 import { loadRules } from "./rules.js";
 import { select } from "./select.js";
-import { renderFull, reminder } from "./render.js";
+import { renderFull, reminder, REMINDER_RESERVE } from "./render.js";
 import { loadState, saveState, resetState } from "./state.js";
 import { logEvent } from "./log.js";
 import { expandHome } from "./paths.js";
@@ -24,9 +24,9 @@ export function run({ agent, session = "default", phase, reset = false, prompt =
       if (reset) resetState(agent, session);
       const seen = loadState(agent, session);
       const fresh = entries.filter((e) => !seen.has(id(e)));
-      const bodies = renderFull(fresh);
-      if (fresh.length) { fresh.forEach((e) => seen.add(id(e))); saveState(agent, session, seen); }
       const rem = phase === "tool" ? "" : reminder(entries);
+      const bodies = renderFull(fresh, rem ? 9000 - REMINDER_RESERVE : 9000);
+      if (fresh.length) { fresh.forEach((e) => seen.add(id(e))); saveState(agent, session, seen); }
       text = bodies && rem ? `${bodies}\n${rem}` : bodies || rem;
     }
     const skills = selected.map((s) => ({ name: s.entry.name, reason: s.reason }));
