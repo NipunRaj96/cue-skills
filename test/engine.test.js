@@ -128,3 +128,14 @@ test("log lines have ISO ts", () => {
   assert.equal(l.event, "start");
   assert.ok(!isNaN(Date.parse(l.ts)));
 });
+
+test("run without cwd defaults to process.cwd()", () => {
+  const h = realpathSync(mkdtempSync(join(tmpdir(), "cue-")));
+  process.env.HOME = h;
+  delete process.env.CUE_DISABLE;
+  mkdirSync(join(h, ".claude/skills/s1"), { recursive: true });
+  writeFileSync(join(h, ".claude/skills/s1/SKILL.md"), "---\nname: s1\ndescription: d\n---\nbody\n");
+  mkdirSync(join(h, ".cue"), { recursive: true });
+  writeFileSync(join(h, ".cue/rules.yaml"), "always: [s1]\n");
+  for (const cwd of [undefined, null]) assert.match(run({ agent: "a", phase: "system", cwd }).text, /## Skill: s1/);
+});

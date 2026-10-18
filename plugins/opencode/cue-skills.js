@@ -3,9 +3,10 @@
 //  "chat.message"(input {sessionID, ...}, output {message, parts})
 //  "experimental.chat.system.transform"(input {sessionID?, model}, output {system: string[]})
 // Never throws into OpenCode.
-import { run } from "__CUE_ENGINE__";
 
 export const CueSkills = async ({ directory }) => {
+  let run;
+  try { ({ run } = await import("__CUE_ENGINE__")); } catch { return {}; } // fail open: stale engine path
   const lastPrompt = {};
   return {
     "chat.message": async (input, output) => {
