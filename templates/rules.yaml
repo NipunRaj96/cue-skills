@@ -1,0 +1,12 @@
+# cue-skills rules. Global: ~/.cue/rules.yaml. Project: <project root>/.cue/rules.yaml
+# Project lists append to global lists; order kept, duplicates dropped.
+always: [caveman, ponytail]       # active every session, in priority order
+never: [some-skill]               # never injected; wins over everything
+when:
+  - prompt: [design, ui, landing page]   # case-insensitive word or phrase match on the user prompt
+    use: [frontend-design]
+  - files: ["**/*.tsx", "**/*.css"]      # glob match on files the agent reads or edits
+    use: [frontend-design]
+  - project: [next.config.js]            # marker file exists at the project root
+    use: [frontend-design]
+skillDirs: [~/my-skills]          # extra directories to scan
