@@ -65,7 +65,7 @@ test("status shows unresolved and stale plugin", () => {
   writeFileSync(join(h, ".config/opencode/plugins/cue-skills.js"), 'import("file:///nonexistent/engine.js")');
   const r = cue(h, ["status"]);
   assert.match(r.out, /ghost/);
-  assert.match(r.out, /OpenCode\s+\S+\s+yes\s+experimental\s+yes/);
+  assert.match(r.out, /OpenCode\s+\S+\s+yes\s+tested\s+yes/);
 });
 
 test("scan, list, why, sync, usage", () => {

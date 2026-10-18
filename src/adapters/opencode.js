@@ -8,7 +8,7 @@ const ENGINE = pathToFileURL(fileURLToPath(new URL("../engine.js", import.meta.u
 const target = () => join(home(), ".config/opencode/plugins/cue-skills.js");
 
 export default {
-  id: "opencode", label: "OpenCode", status: "experimental",
+  id: "opencode", label: "OpenCode", status: "tested",
   detect: () => existsSync(join(home(), ".config/opencode")),
   isInstalled: () => existsSync(target()),
   install() {
