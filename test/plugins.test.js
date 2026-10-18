@@ -48,7 +48,7 @@ test("openclaw install copies plugin, execs CLI; plugin returns appendSystemCont
   const a = get("openclaw");
   a.install("ignored", { exec: (...c) => calls.push(c) });
   const dir = join(h, ".cue/openclaw-plugin");
-  assert.deepEqual(calls[0].slice(0, 2), ["openclaw", ["plugins", "install", dir]]);
+  assert.deepEqual(calls[0].slice(0, 2), ["openclaw", ["plugins", "install", dir, "--force"]]);
   for (const f of ["package.json", "openclaw.plugin.json", "index.js"]) assert.ok(existsSync(join(dir, f)));
   assert.ok(a.isInstalled());
   const handlers = {};

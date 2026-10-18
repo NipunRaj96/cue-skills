@@ -22,7 +22,7 @@ export default {
     mkdirSync(dir, { recursive: true });
     for (const f of readdirSync(SRC))
       writeFileSync(join(dir, f), readFileSync(join(SRC, f), "utf8").split("__CUE_ENGINE__").join(ENGINE).split("__CUE_VERSION__").join(VERSION));
-    exec(bin(), ["plugins", "install", dir], { stdio: "ignore" });
+    exec(bin(), ["plugins", "install", dir, "--force"], { stdio: "ignore" });
     return `OpenClaw: plugin installed from ${dir} (no extra config flags needed).`;
   },
   uninstall(_cmd, { exec = execFileSync } = {}) {
