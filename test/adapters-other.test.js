@@ -24,7 +24,7 @@ function fixture() {
 const AG = (h) => join(h, ".gemini/config/hooks.json");
 
 test("registered in index", () => {
-  assert.deepEqual(adapters.map((a) => a.id).slice(3), ["antigravity", "cursor"]);
+  assert.deepEqual(adapters.map((a) => a.id).slice(3, 5), ["antigravity", "cursor"]);
 });
 
 test("antigravity install: named hook, flat events, foreign kept, idempotent, uninstall", () => {
