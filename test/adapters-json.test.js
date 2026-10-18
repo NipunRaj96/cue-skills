@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, realpathSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readJson, writeJson } from "../src/jsonfile.js";
@@ -49,6 +49,29 @@ test("invalid settings json is not overwritten", () => {
   writeFileSync(f, "{oops");
   assert.throws(() => get("claude").install(CMD("claude")), /invalid JSON, not modified/);
   assert.equal(readJson(join(h, ".claude/settings.json.bak"), "x"), "x");
+  assert.equal(readFileSync(f, "utf8"), "{oops");
+});
+
+test("odd shapes throw, file untouched, isInstalled false", () => {
+  const { h } = fixture();
+  const f = join(h, ".claude/settings.json");
+  for (const raw of ['{"hooks":"x"}', '{"hooks":[]}', '[]', '{"hooks":{"SessionStart":{}}}']) {
+    writeFileSync(f, raw);
+    assert.throws(() => get("claude").install(CMD("claude")), /unexpected hooks shape, not modified/);
+    assert.throws(() => get("claude").uninstall(), /unexpected hooks shape, not modified/);
+    assert.equal(get("claude").isInstalled(), false);
+    assert.equal(readFileSync(f, "utf8"), raw);
+  }
+});
+
+test("uninstall keeps foreign groups without hooks key", () => {
+  const { h } = fixture();
+  const f = join(h, ".claude/settings.json");
+  writeJson(f, { hooks: { SessionStart: [{ matcher: "x" }, null, { hooks: [null, { type: "command", command: "keep" }] }] } });
+  get("claude").install(CMD("claude"));
+  get("claude").uninstall();
+  const g = readJson(f).hooks.SessionStart;
+  assert.deepEqual(g, [{ matcher: "x" }, null, { hooks: [null, { type: "command", command: "keep" }] }]);
 });
 
 test("codex and gemini install", () => {
