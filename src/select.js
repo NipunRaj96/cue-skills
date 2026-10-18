@@ -9,7 +9,7 @@ const word = (w) => new RegExp(`(?<![\\p{L}\\p{N}_])${esc(w)}(?![\\p{L}\\p{N}_])
 
 export function select({ prompt = "", files = [], cwd, rules, catalog }) {
   const root = projectRoot(cwd);
-  const rel = files.map((f) => relative(root, f).replace(/\\/g, "/"));
+  const rel = files.map((f) => relative(root, f).replace(/\\/g, "/")).filter((f) => f !== ".." && !f.startsWith("../"));
   const cands = rules.always.map((name) => [name, "always"]);
   for (const w of rules.when) {
     const p = w.prompt?.find((x) => word(x).test(prompt));

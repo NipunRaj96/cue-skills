@@ -104,3 +104,20 @@ test("missing files empty; bad types collect errors", () => {
   assert.equal(r.errors.length, 2);
   assert.equal(loadRules(newProj("p7")).errors.length, 0);
 });
+
+test("when without use errors; relative skillDirs resolve against rules file", () => {
+  const root = newProj("p8");
+  mkdirSync(join(root, ".cue"));
+  writeFileSync(globalFile, "");
+  writeFileSync(join(root, ".cue/rules.yaml"), "skillDirs: [local, /abs, ~/h]\nwhen:\n  - prompt: ui\n");
+  const r = loadRules(root);
+  assert.deepEqual(r.skillDirs, [join(root, ".cue/local"), "/abs", "~/h"]);
+  assert.match(r.errors.join("\n"), /when\[0\]: missing use/);
+});
+
+test("files outside the project are ignored", () => {
+  const root = newProj("p9");
+  const r = sel({ cwd: root, rules: rule({ when: [{ files: ["**"], use: ["a"] }] }), files: [join(root, "../x.js")] });
+  assert.deepEqual(picked(r), []);
+  assert.deepEqual(picked(sel({ cwd: root, rules: rule({ when: [{ files: ["**"], use: ["a"] }] }), files: [join(root, "x.js")] })), ["a"]);
+});

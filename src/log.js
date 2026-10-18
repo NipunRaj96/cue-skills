@@ -1,4 +1,4 @@
-import { appendFileSync, readFileSync, mkdirSync } from "node:fs";
+import { appendFileSync, readFileSync, mkdirSync, statSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { cueDir } from "./paths.js";
 
@@ -7,6 +7,7 @@ const file = () => join(cueDir(), "log.jsonl");
 export function logEvent(obj) {
   try {
     mkdirSync(cueDir(), { recursive: true });
+    try { if (statSync(file()).size > 5 * 1024 * 1024) renameSync(file(), file() + ".1"); } catch { /* no log yet */ }
     appendFileSync(file(), JSON.stringify({ ts: new Date().toISOString(), ...obj }) + "\n");
   } catch { /* logging must never throw */ }
 }
