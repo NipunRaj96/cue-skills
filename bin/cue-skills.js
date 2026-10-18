@@ -1,3 +1,3 @@
 #!/usr/bin/env node
-const { version } = require("../package.json");
-console.log(`cue-skills ${version}: right skill, right moment. Early development, nothing to run yet.`);
+import { main } from "../src/cli.js";
+main(process.argv.slice(2));

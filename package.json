@@ -5,9 +5,38 @@
   "license": "MIT",
   "author": "Nipun Kumar <nipunraj2004@gmail.com>",
   "homepage": "https://github.com/NipunRaj96/cue-skills",
-  "repository": { "type": "git", "url": "git+https://github.com/NipunRaj96/cue-skills.git" },
-  "bugs": { "url": "https://github.com/NipunRaj96/cue-skills/issues" },
-  "keywords": ["claude-code", "codex", "antigravity", "opencode", "agent-skills", "mcp"],
-  "bin": { "cue-skills": "bin/cue-skills.js" },
-  "files": ["bin"]
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NipunRaj96/cue-skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NipunRaj96/cue-skills/issues"
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "antigravity",
+    "opencode",
+    "agent-skills",
+    "mcp"
+  ],
+  "type": "module",
+  "bin": {
+    "cue-skills": "bin/cue-skills.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "yaml": "^2.5.0"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "files": [
+    "bin",
+    "src",
+    "plugins",
+    "templates"
+  ]
 }
