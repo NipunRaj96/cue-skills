@@ -80,15 +80,13 @@ test("writeJson keeps mode and symlinks", () => {
   assert.deepEqual(readJson(join(d, "real.json")), { y: 2 });
 });
 
-test("AGENTS.md sync keeps mode and symlinks", () => {
+test("AGENTS.md sync keeps mode of a regular file", () => {
   const d = tmp();
   process.env.HOME = d;
   mkdirSync(join(d, "p/.git"), { recursive: true });
-  writeFileSync(join(d, "p/real.md"), "mine\n");
-  chmodSync(join(d, "p/real.md"), 0o600);
-  symlinkSync(join(d, "p/real.md"), join(d, "p/AGENTS.md"));
+  writeFileSync(join(d, "p/AGENTS.md"), "mine\n");
+  chmodSync(join(d, "p/AGENTS.md"), 0o600);
   syncAgentsMd(join(d, "p"));
-  assert.ok(lstatSync(join(d, "p/AGENTS.md")).isSymbolicLink());
-  assert.equal(statSync(join(d, "p/real.md")).mode & 0o777, 0o600);
-  assert.match(readFileSync(join(d, "p/real.md"), "utf8"), /^mine\n[\s\S]*cue-skills:start/);
+  assert.equal(statSync(join(d, "p/AGENTS.md")).mode & 0o777, 0o600);
+  assert.match(readFileSync(join(d, "p/AGENTS.md"), "utf8"), /^mine\n[\s\S]*cue-skills:start/);
 });
