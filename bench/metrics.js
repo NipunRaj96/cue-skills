@@ -18,12 +18,14 @@ export function cavemanScore(reply) {
 export const locFromNumstat = (out) =>
   String(out ?? "").split("\n").reduce((n, l) => n + (parseInt(l.split("\t")[0], 10) || 0), 0);
 
-export function turnMetrics(reply, usageOut) {
+export function turnMetrics(reply, usageOut, steps = null) {
   const estimated = !(Number.isFinite(usageOut) && usageOut >= 0);
   return {
     out_tokens: estimated ? tokenEstimate(reply) : usageOut,
     estimated,
     words: wordCount(reply),
     caveman_score: cavemanScore(reply),
+    agent_steps: Number.isFinite(steps) ? steps : null,
+    reply: String(reply ?? "").slice(0, 2000),
   };
 }

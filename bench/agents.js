@@ -28,7 +28,7 @@ const fail = (r, msg) => ({ text: "", usageOut: null, error: r.timedOut ? "timeo
 export function parseClaude(out) {
   const j = JSON.parse(out);
   if (j.is_error) return { text: String(j.result ?? ""), usageOut: null, error: String(j.result || j.subtype) };
-  return { text: String(j.result ?? ""), usageOut: j.usage?.output_tokens ?? null, sessionId: j.session_id };
+  return { text: String(j.result ?? ""), usageOut: j.usage?.output_tokens ?? null, steps: j.num_turns ?? null, sessionId: j.session_id };
 }
 
 export function parseOpencode(out) {
@@ -37,7 +37,7 @@ export function parseOpencode(out) {
   const text = ev.filter((e) => e.type === "text").map((e) => e.part?.text ?? "").join("\n");
   const fin = ev.filter((e) => e.type === "step_finish");
   const usageOut = fin.length ? fin.reduce((n, e) => n + (e.part?.tokens?.output ?? 0), 0) : null;
-  return { text, usageOut, error: err ? JSON.stringify(err.error ?? err).slice(0, 200) : undefined };
+  return { text, usageOut, steps: fin.length || null, error: err ? JSON.stringify(err.error ?? err).slice(0, 200) : undefined };
 }
 
 export function parseOpenclaw(out) {
@@ -47,11 +47,11 @@ export function parseOpenclaw(out) {
 }
 
 // agy usage is cumulative per conversation: caller passes the previous cumulative value
-export function parseAgy(out, prevCum = 0) {
+export function parseAgy(out, prevCum = 0, prevSteps = 0) {
   const j = JSON.parse(out);
   const cum = j.usage?.output_tokens;
   const ok = j.status === "SUCCESS";
-  return { text: String(j.response ?? ""), usageOut: Number.isFinite(cum) ? cum - prevCum : null, cum, sessionId: j.conversation_id, error: ok ? undefined : String(j.status) };
+  return { text: String(j.response ?? ""), usageOut: Number.isFinite(cum) ? cum - prevCum : null, cum, steps: Number.isFinite(j.num_turns) ? j.num_turns - prevSteps : null, cumSteps: j.num_turns, sessionId: j.conversation_id, error: ok ? undefined : String(j.status) };
 }
 
 // codex usage is cumulative per thread too
@@ -131,7 +131,8 @@ export const AGENTS = {
       const r = await run("agy", a, { cwd: runDir });
       if (r.timedOut || !r.out.trim()) return fail(r);
       try {
-        const p = parseAgy(r.out, s.cum);
+        const p = parseAgy(r.out, s.cum, s.steps ?? 0);
+        if (Number.isFinite(p.cumSteps)) s.steps = p.cumSteps;
         s.id = p.sessionId ?? s.id;
         if (Number.isFinite(p.cum)) s.cum = p.cum;
         return p;

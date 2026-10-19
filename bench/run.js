@@ -176,7 +176,7 @@ async function main() {
           git(runDir, "add", "-A");
           const loc_added = locFromNumstat(git(runDir, "diff", "--cached", "--numstat", "--", "*.js").stdout);
           git(runDir, "commit", "-qm", `turn ${turn}`);
-          const row = { ...base, turn, ...turnMetrics(res.text, res.usageOut), loc_added, ms };
+          const row = { ...base, turn, ...turnMetrics(res.text, res.usageOut, res.steps), loc_added, ms };
           if (turn === def[task].length) row.tests_pass = !res.error && spawnSync("node", ["--test"], { cwd: runDir, timeout: 60000 }).status === 0;
           if (res.error) row.error = res.error;
           log(row);

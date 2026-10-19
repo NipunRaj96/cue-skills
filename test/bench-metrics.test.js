@@ -20,7 +20,7 @@ test("token estimate is ceil(chars/4)", () => {
 });
 
 test("turnMetrics prefers real usage and flags estimates", () => {
-  assert.deepEqual(turnMetrics("abcdefgh", 5), { out_tokens: 5, estimated: false, words: 1, caveman_score: 1 });
+  assert.deepEqual(turnMetrics("abcdefgh", 5), { out_tokens: 5, estimated: false, words: 1, caveman_score: 1, agent_steps: null, reply: "abcdefgh" });
   assert.equal(turnMetrics("abcdefgh", null).out_tokens, 2);
   assert.equal(turnMetrics("abcdefgh", null).estimated, true);
   assert.equal(wordCount(" a  b\nc "), 3);
@@ -29,4 +29,10 @@ test("turnMetrics prefers real usage and flags estimates", () => {
 test("locFromNumstat sums added lines", () => {
   assert.equal(locFromNumstat("3\t1\ta.js\n5\t0\tb.js\n-\t-\timg.png\n"), 8);
   assert.equal(locFromNumstat(""), 0);
+});
+
+test("turnMetrics stores steps and truncates reply to 2000 chars", () => {
+  const m = turnMetrics("x".repeat(2500), 1, 3);
+  assert.equal(m.agent_steps, 3);
+  assert.equal(m.reply.length, 2000);
 });
