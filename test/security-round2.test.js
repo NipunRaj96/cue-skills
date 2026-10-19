@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { writeFileSync, mkdirSync, symlinkSync, linkSync, rmSync, readFileSync } from "node:fs";
+import { writeFileSync, mkdirSync, symlinkSync, linkSync, rmSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -35,7 +35,7 @@ test("N1: leaf swapped for a symlink after the catalog is cached is not rendered
   symlinkSync(secretFile(), leaf); // only x/ changes mtime: cache key is unchanged
   const t = go();
   assert.doesNotMatch(t, /TOP-SECRET/);
-  assert.match(t, /## Skill: x\nRead .*SKILL\.md and follow it\./);
+  assert.doesNotMatch(t, /SKILL\.md/); // rejected project entry: no Read line either
 });
 
 test("N1: hard-linked project SKILL.md is refused by catalog and render", () => {
@@ -93,4 +93,28 @@ test("status prints the project root's rules path, not the cwd's", () => {
   mkdirSync(join(cwd, "sub"));
   const r = spawnSync(process.execPath, [BIN, "status"], { cwd: join(cwd, "sub"), env: { ...process.env, HOME: h } });
   assert.ok(r.stdout.toString().includes(`${join(cwd, ".cue/rules.yaml")} (project root)`));
+});
+
+test("R1: rejected project skill is omitted entirely (render and sync); user entries keep the Read line", () => {
+  const { h, cwd } = fixture();
+  const leaf = join(cwd, ".claude/skills/x/SKILL.md");
+  mkdirSync(join(cwd, ".claude/skills/x"), { recursive: true });
+  symlinkSync(secretFile(), leaf);
+  const e = { name: "x", path: leaf, kind: "project", base: cwd };
+  assert.equal(renderFull([e]), "");
+  const u = { name: "u", path: join(h, "nope/SKILL.md"), kind: "user" };
+  assert.match(renderFull([u]), /Read .*nope\/SKILL\.md and follow it/);
+  rules(join(cwd, ".cue/rules.yaml"), "always: [x]\n");
+  trustCommand(cwd);
+  syncAgentsMd(cwd);
+  assert.doesNotMatch(readFileSync(join(cwd, "AGENTS.md"), "utf8"), /SKILL\.md|TOP-SECRET/);
+});
+
+test("TOCTOU: fd must match the path's dev/ino after realpath", () => {
+  const { cwd } = fixture();
+  const f = join(cwd, "a.md");
+  writeFileSync(f, "hi");
+  assert.equal(readRegular(f, 100, { base: cwd, nofollow: true }), "hi");
+  const swapped = (p) => ({ ...statSync(p), ino: statSync(p).ino + 1 });
+  assert.equal(readRegular(f, 100, { base: cwd, nofollow: true, stat: swapped }), null);
 });

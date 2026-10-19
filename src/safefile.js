@@ -1,11 +1,11 @@
-import { openSync, fstatSync, readFileSync, closeSync, realpathSync, constants } from "node:fs";
+import { openSync, fstatSync, statSync, readFileSync, closeSync, realpathSync, constants } from "node:fs";
 import { sep } from "node:path";
 
 // The one reader for files a project (or the user) controls. Checks and read share one fd,
 // so a swap between check and read cannot redirect us.
 // opts: base (project root: path must resolve inside it, single hard link), nofollow, owned.
 // Returns {data: string} | {missing: true} | {error: string}
-export function readChecked(path, maxBytes, { base, nofollow = false, owned = false } = {}) {
+export function readChecked(path, maxBytes, { base, nofollow = false, owned = false, stat = statSync } = {}) {
   let fd;
   try {
     fd = openSync(path, constants.O_RDONLY | (constants.O_NONBLOCK ?? 0) | (nofollow ? constants.O_NOFOLLOW ?? 0 : 0));
@@ -23,6 +23,8 @@ export function readChecked(path, maxBytes, { base, nofollow = false, owned = fa
       if (st.nlink !== 1) return { error: `${path}: hard-linked file, ignored` };
       const rb = realpathSync(base), rp = realpathSync(path);
       if (!rp.startsWith(rb + sep)) return { error: `${path}: resolves outside the project, ignored` };
+      const now = stat(rp); // the path must still name the file we opened
+      if (now.dev !== st.dev || now.ino !== st.ino) return { error: `${path}: changed while reading, ignored` };
     }
     return { data: readFileSync(fd, "utf8") };
   } catch (e) {
