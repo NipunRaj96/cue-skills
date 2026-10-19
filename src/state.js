@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, renameSync, mkdirSync, readdirSync, statSync, unlinkSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { cueDir } from "./paths.js";
+import { cueDir, ensureCueDir } from "./paths.js";
 
 const dir = () => join(cueDir(), "state");
 const clean = (s) => String(s).replace(/[^A-Za-z0-9_-]/g, "_");
@@ -12,10 +12,11 @@ export function loadState(agent, session) {
 }
 
 export function saveState(agent, session, set) {
+  ensureCueDir();
   mkdirSync(dir(), { recursive: true });
   const f = file(agent, session);
   const tmp = `${f}.tmp-${process.pid}`;
-  writeFileSync(tmp, JSON.stringify([...set]));
+  writeFileSync(tmp, JSON.stringify([...set]), { mode: 0o600 });
   renameSync(tmp, f);
   const cutoff = Date.now() - 7 * 864e5;
   for (const n of readdirSync(dir())) {
