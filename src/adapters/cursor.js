@@ -3,9 +3,8 @@ import { join } from "node:path";
 import { readJson, writeJson } from "../jsonfile.js";
 import { home } from "../paths.js";
 import { run } from "../engine.js";
+import { MARK } from "./hooksjson.js";
 
-// matches `cue-skills hook` and `.../cue-skills.js' hook` (quoted bin path)
-const MARK = /cue-skills\S* hook/;
 const plain = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
 const isOurs = (h) => plain(h) && typeof h.command === "string" && MARK.test(h.command);
 const file = () => join(home(), ".cursor/hooks.json");
@@ -30,7 +29,7 @@ export default {
     d.version ??= 1;
     d.hooks ||= {};
     const l = (d.hooks.sessionStart ||= []);
-    if (!l.some(isOurs)) l.push({ command: `${cmd} sessionStart` });
+    if (!l.some(isOurs)) l.push({ command: `${cmd} sessionStart`, timeout: 5 });
     writeJson(file(), d);
     return `Cursor: hooks installed in ${file()}.`;
   },

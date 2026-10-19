@@ -105,7 +105,7 @@ test("cursor install keeps foreign + output shape", () => {
   const d = readJson(f);
   assert.equal(d.extra, 1);
   assert.deepEqual(d.hooks.stop, [{ command: "keep" }]);
-  assert.deepEqual(d.hooks.sessionStart, [{ command: CMD("cursor") + " sessionStart" }]);
+  assert.deepEqual(d.hooks.sessionStart, [{ command: CMD("cursor") + " sessionStart", timeout: 5 }]);
   assert.ok(c.isInstalled() && c.detect());
   const out = JSON.parse(runHook("cursor", "sessionStart", JSON.stringify({ session_id: "s", workspace_roots: [cwd] })));
   assert.match(out.additional_context, /## Skill: caveman/);

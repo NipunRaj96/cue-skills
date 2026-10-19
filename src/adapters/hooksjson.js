@@ -4,8 +4,8 @@ import { readJson, writeJson } from "../jsonfile.js";
 import { home } from "../paths.js";
 import { run } from "../engine.js";
 
-// matches `cue-skills hook` and `.../cue-skills.js' hook` (quoted bin path)
-const MARK = /cue-skills\S* hook/;
+// Cue's own hook command only: bare, or the bin path quoted ('..cue-skills.js' hook / "..." hook).
+export const MARK = /(^|[\/'"\s])cue-skills(\.js)?['"]? hook(\s|$)/;
 
 const plain = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
 
