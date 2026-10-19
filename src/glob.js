@@ -1,19 +1,36 @@
-// Callers normalise "\" to "/" before testing.
-export function globToRegExp(glob) {
-  if (glob.length > 256) throw new Error("glob longer than 256 characters");
-  glob = glob.replace(/\*{3,}/g, "**");
-  if ((glob.match(/\*\*|\*|\?/g) || []).length > 10) throw new Error("glob has more than 10 wildcards");
-  // each star is a backtracking point (n^k): 10 of them still take seconds on a 40-char path
-  if ((glob.match(/\*+/g) || []).length > 4) throw new Error("glob has more than 4 star wildcards");
-  let re = "";
-  for (let i = 0; i < glob.length; i++) {
-    const c = glob[i];
-    if (c === "*" && glob[i + 1] === "*") {
-      i++;
-      if (glob[i + 1] === "/") { i++; re += "(?:.*/)?"; } else re += ".*";
-    } else if (c === "*") re += "[^/]*";
-    else if (c === "?") re += "[^/]";
-    else re += c.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+// Linear-ish glob matcher (no regex, no catastrophic backtracking). Callers normalise "\\" to "/".
+// "**" as a whole segment matches zero or more segments; "*" and "?" never cross "/".
+const MAX_PATTERN = 256, MAX_PATH = 1024;
+
+// one segment: classic star-backtrack, only the last star ever retries
+function seg(p, s) {
+  let pi = 0, si = 0, star = -1, mark = 0;
+  while (si < s.length) {
+    if (p[pi] === "*") { star = pi++; mark = si; }
+    else if (pi < p.length && (p[pi] === "?" || p[pi] === s[si])) { pi++; si++; }
+    else if (star >= 0) { pi = star + 1; si = ++mark; }
+    else return false;
   }
-  return new RegExp(`^${re}$`);
+  while (p[pi] === "*") pi++;
+  return pi === p.length;
 }
+
+export function matchGlob(pattern, path) {
+  if (pattern.length > MAX_PATTERN) throw new Error("glob longer than 256 characters");
+  if (path.length > MAX_PATH) return false;
+  const P = pattern.split("/"), S = path.split("/");
+  let pi = 0, si = 0, star = -1, mark = 0;
+  while (si < S.length) {
+    if (P[pi] === "**") { star = pi++; mark = si; }
+    else if (pi < P.length && seg(P[pi], S[si])) { pi++; si++; }
+    else if (star >= 0) { pi = star + 1; si = ++mark; }
+    else return false;
+  }
+  while (P[pi] === "**") pi++;
+  return pi === P.length;
+}
+
+export const globToRegExp = (glob) => {
+  if (glob.length > MAX_PATTERN) throw new Error("glob longer than 256 characters");
+  return { test: (path) => matchGlob(glob, path) };
+};

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { adapters } from "./adapters/index.js";
 import { runHook } from "./hook.js";
-import { cueDir, ensureCueDir, home } from "./paths.js";
+import { cueDir, ensureCueDir, home, projectRoot } from "./paths.js";
 import { trustCommand } from "./trust.js";
 import { loadRules } from "./rules.js";
 import { loadCatalog, scanRoots } from "./catalog.js";
@@ -73,7 +73,7 @@ function init(args) {
 function status() {
   const cwd = process.cwd();
   const rules = loadRules(cwd);
-  say(`rules: ${join(cueDir(), "rules.yaml")}, ${join(cwd, ".cue/rules.yaml")} (project root)`);
+  say(`rules: ${join(cueDir(), "rules.yaml")}, ${join(projectRoot(cwd), ".cue/rules.yaml")} (project root)`);
   say(`project rules: ${rules.projectStatus}${rules.projectStatus === "untrusted" || rules.projectStatus === "changed" ? " (ignored; run: cue-skills trust)" : ""}`);
   for (const e of rules.errors) say(`rule error: ${e}`);
   const catalog = loadCatalog({ cwd, rules });

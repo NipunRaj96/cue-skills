@@ -1,7 +1,7 @@
-import { existsSync } from "node:fs";
-import { join, relative } from "node:path";
+import { realpathSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { projectRoot } from "./paths.js";
-import { globToRegExp } from "./glob.js";
+import { matchGlob } from "./glob.js";
 import { resolve } from "./catalog.js";
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -11,15 +11,20 @@ export function select({ prompt = "", files = [], cwd, rules, catalog }) {
   const root = projectRoot(cwd);
   const rel = files.map((f) => relative(root, f).replace(/\\/g, "/")).filter((f) => f !== ".." && !f.startsWith("../"));
   const errors = [];
+  // a marker counts only if it really lives inside the repo (a symlink out is not an oracle)
+  let rr; try { rr = realpathSync(root); } catch { rr = null; }
+  const marker = (x) => {
+    try { const p = realpathSync(join(root, x)); return rr !== null && (p === rr || p.startsWith(rr + sep)); } catch { return false; }
+  };
   const glob = (x) => {
-    try { const re = globToRegExp(x); return rel.some((f) => re.test(f)); }
+    try { return rel.some((f) => matchGlob(x, f)); }
     catch (e) { errors.push(`files: ${x.slice(0, 40)}: ${e.message}, skipped`); return false; }
   };
   const cands = rules.always.map((name) => [name, "always"]);
   for (const w of rules.when) {
     const p = w.prompt?.find((x) => word(x).test(prompt));
     const g = w.files?.find(glob);
-    const m = w.project?.find((x) => existsSync(join(root, x)));
+    const m = w.project?.find((x) => marker(x));
     const reason = p != null ? `prompt:"${p}"` : g != null ? `files:${g}` : m != null ? `project:${m}` : null;
     if (reason) for (const name of w.use) cands.push([name, reason]);
   }

@@ -1,8 +1,9 @@
-import { readdirSync, readFileSync, statSync, lstatSync, realpathSync, existsSync } from "node:fs";
+import { readdirSync, statSync, lstatSync, realpathSync, existsSync } from "node:fs";
 import { join, basename, dirname, sep } from "node:path";
 import { home, cueDir, ensureCueDir, projectRoot, expandHome } from "./paths.js";
 import { parseSkill } from "./frontmatter.js";
 import { readJson, writeJson } from "./jsonfile.js";
+import { readRegular } from "./safefile.js";
 
 const GLOBAL = [".claude/skills", ".agents/skills", ".config/opencode/skills", ".openclaw/skills",
   ".gemini/config/skills", ".gemini/skills", ".cursor/skills", ".codex/skills"];
@@ -56,18 +57,6 @@ export function scanRoots({ cwd, rules = {} }) {
   return roots;
 }
 
-// project: regular file (no link), resolved inside the project. user/plugin: links ok, target must be a file.
-function skillFile(file, { kind, base }) {
-  try {
-    if (kind === "project") {
-      const l = lstatSync(file);
-      return l.isFile() && l.size <= MAX_SKILL && inside(realpathSync(file), base);
-    }
-    const st = statSync(file);
-    return st.isFile() && st.size <= MAX_SKILL;
-  } catch { return false; }
-}
-
 // budget is shared by every root of one scan
 function walk(dir, depth, seen, out, root, budget) {
   let real;
@@ -75,7 +64,7 @@ function walk(dir, depth, seen, out, root, budget) {
   if (seen.has(real) || budget.n >= MAX_DIRS) return;
   seen.add(real); budget.n++;
   const file = join(dir, "SKILL.md");
-  if (skillFile(file, root)) out.push(file);
+  if (existsSync(file)) out.push(file); // content checks happen in readRegular
   if (depth >= 6) return;
   for (const n of dirs(dir, root.kind !== "project").sort())
     if (n !== "node_modules" && n !== ".git") walk(join(dir, n), depth + 1, seen, out, root, budget);
@@ -83,18 +72,21 @@ function walk(dir, depth, seen, out, root, budget) {
 
 export function buildCatalog(roots) {
   const entries = [], budget = { n: 0 };
-  for (const r of roots) {
+  // user/plugin roots first: a huge project cannot use up the shared dir budget
+  for (const r of [...roots].sort((a, b) => (a.kind === "project") - (b.kind === "project"))) {
     const { root, kind, plugin } = r;
     const files = [];
     walk(root, 0, new Set(), files, r, budget);
     for (const path of files) {
       try {
-        const { meta } = parseSkill(readFileSync(path, "utf8"));
+        const text = readRegular(path, MAX_SKILL, kind === "project" ? { base: r.base, nofollow: true } : {});
+        if (text === null) continue;
+        const { meta } = parseSkill(text);
         entries.push({
           name: String(meta.name || basename(dirname(path))),
           plugin: plugin ?? null,
           description: String(meta.description ?? ""),
-          path, size: statSync(path).size, kind,
+          path, size: Buffer.byteLength(text), kind, base: kind === "project" ? r.base : null,
         });
       } catch { /* unreadable or bad yaml: skip */ }
     }
