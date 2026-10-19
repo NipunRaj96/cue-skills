@@ -1,7 +1,7 @@
-import { readFileSync, statSync } from "node:fs";
 import { dirname } from "node:path";
 import { parseSkill } from "./frontmatter.js";
 import { MAX_SKILL } from "./catalog.js";
+import { readRegular } from "./safefile.js";
 
 const readLine = (e) => `## Skill: ${e.name}\nRead ${e.path} and follow it.\n`;
 
@@ -10,9 +10,10 @@ export function renderFull(entries, budget = 9000) {
   for (const e of entries) {
     let block;
     try {
-      const st = statSync(e.path);
-      if (!st.isFile() || st.size > MAX_SKILL) throw new Error("not a readable skill file");
-      const { body } = parseSkill(readFileSync(e.path, "utf8"));
+      // project entries: never follow a link, stay inside the project (the cached catalog may be stale)
+      const text = readRegular(e.path, MAX_SKILL, e.kind === "project" ? { base: e.base || "\0", nofollow: true } : {});
+      if (text === null) throw new Error("not a readable skill file");
+      const { body } = parseSkill(text);
       block = `## Skill: ${e.name}\nSkill dir: ${dirname(e.path)}\n${body.endsWith("\n") ? body : body + "\n"}`;
     } catch { block = readLine(e); }
     if (out.length + block.length > budget) block = readLine(e);

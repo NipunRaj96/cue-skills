@@ -1,7 +1,8 @@
 import { join, dirname, resolve, isAbsolute, relative, sep } from "node:path";
 import { parse } from "yaml";
 import { cueDir, projectRoot } from "./paths.js";
-import { readRegular, readTrusted, realRoot, sha } from "./trust.js";
+import { readTrusted, realRoot, sha } from "./trust.js";
+import { readChecked } from "./safefile.js";
 
 const MAX_RULES = 64 * 1024;
 const unc = (d) => /^(\\\\|\/\/)/.test(d);
@@ -58,20 +59,20 @@ export function loadRules(cwd) {
   const errors = [];
   const empty = () => ({ always: [], never: [], when: [], skillDirs: [] });
   const gfile = join(cueDir(), "rules.yaml");
-  const g0 = readRegular(gfile, MAX_RULES);
+  const g0 = readChecked(gfile, MAX_RULES);
   if (g0.error) errors.push(g0.error);
-  const g = g0.data ? readRules(gfile, g0.data.toString("utf8"), errors) : empty();
+  const g = g0.data ? readRules(gfile, g0.data, errors) : empty();
 
   // project rules: ignored unless the user trusted exactly this content
   const root = projectRoot(cwd);
   const pfile = join(root, ".cue", "rules.yaml");
-  const p0 = readRegular(pfile, MAX_RULES, true);
+  const p0 = readChecked(pfile, MAX_RULES, { base: root, nofollow: true, owned: true });
   let projectStatus = "none", p = empty();
   if (p0.error) { errors.push(p0.error); projectStatus = "untrusted"; }
   else if (p0.data) {
     const t = readTrusted()[realRoot(root)];
     projectStatus = t == null ? "untrusted" : t !== sha(p0.data) ? "changed" : "trusted";
-    if (projectStatus === "trusted") p = readRules(pfile, p0.data.toString("utf8"), errors, root);
+    if (projectStatus === "trusted") p = readRules(pfile, p0.data, errors, root);
   }
 
   // names only the project introduced: only those may resolve from project roots or be vetoed by it

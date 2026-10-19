@@ -15,6 +15,7 @@ function check(f, realRoot) {
   let st = null;
   try { st = lstatSync(f); } catch (e) { if (e.code !== "ENOENT") throw new Error(`${f}: ${e.message}, refusing`); }
   if (st && !st.isFile()) throw new Error(`${f}: not a regular file, refusing`);
+  if (st && st.nlink > 1) throw new Error(`${f}: hard-linked file, refusing`);
   // nearest existing ancestor of the parent must resolve inside the project (nothing is created before this)
   for (let d = dirname(f); ; d = dirname(d)) {
     try { lstatSync(d); } catch (e) { if (e.code === "ENOENT" && dirname(d) !== d) continue; throw new Error(`${f}: ${e.message}, refusing`); }

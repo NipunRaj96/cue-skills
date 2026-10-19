@@ -27,9 +27,10 @@ function trustedGit(d) {
 // Walks up from cwd, never into $HOME itself or above it.
 export function projectRoot(cwd) {
   const stops = new Set([resolve(home())]);
-  try { stops.add(realpathSync(home())); } catch { /* no home */ }
+  try { stops.add(realpathSync.native(home())); } catch { /* no home */ }
+  const real = (d) => { try { return realpathSync.native(d); } catch { return d; } };
   for (let d = resolve(cwd); ; d = dirname(d)) {
-    if (stops.has(d)) return cwd;
+    if (stops.has(d) || stops.has(real(d))) return cwd;
     if (existsSync(join(d, ".git")) && trustedGit(d)) return d;
     if (dirname(d) === d) return cwd;
   }
