@@ -1,16 +1,19 @@
-import { readdirSync, readFileSync, statSync, realpathSync, existsSync } from "node:fs";
-import { join, basename, dirname } from "node:path";
-import { home, cueDir, projectRoot, expandHome } from "./paths.js";
+import { readdirSync, readFileSync, statSync, lstatSync, realpathSync, existsSync } from "node:fs";
+import { join, basename, dirname, sep } from "node:path";
+import { home, cueDir, ensureCueDir, projectRoot, expandHome } from "./paths.js";
 import { parseSkill } from "./frontmatter.js";
 import { readJson, writeJson } from "./jsonfile.js";
 
 const GLOBAL = [".claude/skills", ".agents/skills", ".config/opencode/skills", ".openclaw/skills",
   ".gemini/config/skills", ".gemini/skills", ".cursor/skills", ".codex/skills"];
 const PROJECT = [".claude/skills", ".agents/skills", ".opencode/skills"];
+export const MAX_SKILL = 256 * 1024;
+const MAX_DIRS = 20000;
 const KIND_ORDER = ["project", "user", "plugin"];
 
-const dirs = (p) => {
-  try { return readdirSync(p, { withFileTypes: true }).filter((d) => d.isDirectory() || d.isSymbolicLink()).map((d) => d.name); }
+// follow=false (project roots): symlinked directories are never listed
+const dirs = (p, follow = true) => {
+  try { return readdirSync(p, { withFileTypes: true }).filter((d) => d.isDirectory() || (follow && d.isSymbolicLink())).map((d) => d.name); }
   catch { return []; }
 };
 const isSemver = (v) => /^\d+(\.\d+)*$/.test(v);
@@ -26,11 +29,22 @@ function cmpVer(a, b) {
   return 0;
 }
 
-export function scanRoots({ cwd, extraDirs = [] }) {
+const inside = (p, base) => p === base || p.startsWith(base + sep);
+
+export function scanRoots({ cwd, rules = {} }) {
   const roots = [];
   const add = (root, kind, plugin) => existsSync(root) && roots.push(plugin ? { root, kind, plugin } : { root, kind });
   const proj = projectRoot(cwd);
-  for (const p of PROJECT) add(join(proj, p), "project");
+  if (rules.projectStatus === "trusted") {
+    let base;
+    try { base = realpathSync(proj); } catch { base = null; }
+    for (const root of [...PROJECT.map((p) => join(proj, p)), ...(rules.projectSkillDirs ?? [])]) {
+      try {
+        // a real directory (not a link) whose resolved path stays inside the project
+        if (base && lstatSync(root).isDirectory() && inside(realpathSync(root), base)) roots.push({ root, kind: "project", base });
+      } catch { /* absent */ }
+    }
+  }
   for (const p of GLOBAL) add(join(home(), p), "user");
   const cache = join(home(), ".claude/plugins/cache");
   for (const market of dirs(cache))
@@ -38,27 +52,41 @@ export function scanRoots({ cwd, extraDirs = [] }) {
       const latest = dirs(join(cache, market, plugin)).sort(cmpVer).pop();
       if (latest) add(join(cache, market, plugin, latest, "skills"), "plugin", plugin);
     }
-  for (const d of extraDirs) add(expandHome(d), "user");
+  for (const d of rules.skillDirs ?? []) add(expandHome(d), "user");
   return roots;
 }
 
-function walk(dir, depth, seen, out) {
+// project: regular file (no link), resolved inside the project. user/plugin: links ok, target must be a file.
+function skillFile(file, { kind, base }) {
+  try {
+    if (kind === "project") {
+      const l = lstatSync(file);
+      return l.isFile() && l.size <= MAX_SKILL && inside(realpathSync(file), base);
+    }
+    const st = statSync(file);
+    return st.isFile() && st.size <= MAX_SKILL;
+  } catch { return false; }
+}
+
+// budget is shared by every root of one scan
+function walk(dir, depth, seen, out, root, budget) {
   let real;
   try { real = realpathSync(dir); } catch { return; }
-  if (seen.has(real) || seen.size >= 5000) return;
-  seen.add(real);
+  if (seen.has(real) || budget.n >= MAX_DIRS) return;
+  seen.add(real); budget.n++;
   const file = join(dir, "SKILL.md");
-  if (existsSync(file)) out.push(file);
+  if (skillFile(file, root)) out.push(file);
   if (depth >= 6) return;
-  for (const n of dirs(dir).sort())
-    if (n !== "node_modules" && n !== ".git") walk(join(dir, n), depth + 1, seen, out);
+  for (const n of dirs(dir, root.kind !== "project").sort())
+    if (n !== "node_modules" && n !== ".git") walk(join(dir, n), depth + 1, seen, out, root, budget);
 }
 
 export function buildCatalog(roots) {
-  const entries = [];
-  for (const { root, kind, plugin } of roots) {
+  const entries = [], budget = { n: 0 };
+  for (const r of roots) {
+    const { root, kind, plugin } = r;
     const files = [];
-    walk(root, 0, new Set(), files);
+    walk(root, 0, new Set(), files, r, budget);
     for (const path of files) {
       try {
         const { meta } = parseSkill(readFileSync(path, "utf8"));
@@ -74,8 +102,8 @@ export function buildCatalog(roots) {
   return entries.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 }
 
-export function loadCatalog({ cwd, extraDirs }) {
-  const roots = scanRoots({ cwd, extraDirs });
+export function loadCatalog({ cwd, rules }) {
+  const roots = scanRoots({ cwd, rules });
   const key = JSON.stringify(roots.map((r) => [r.root, statSync(r.root).mtimeMs]));
   const file = join(cueDir(), "catalog.json");
   try {
@@ -83,7 +111,7 @@ export function loadCatalog({ cwd, extraDirs }) {
     if (c && c.key === key) return c.entries;
   } catch { /* corrupt cache: rebuild */ }
   const entries = buildCatalog(roots);
-  try { writeJson(file, { key, entries }); } catch { /* cache is optional */ }
+  try { ensureCueDir(); writeJson(file, { key, entries }, 0o600); } catch { /* cache is optional */ }
   return entries;
 }
 

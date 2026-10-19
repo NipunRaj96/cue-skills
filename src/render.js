@@ -1,6 +1,7 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { dirname } from "node:path";
 import { parseSkill } from "./frontmatter.js";
+import { MAX_SKILL } from "./catalog.js";
 
 const readLine = (e) => `## Skill: ${e.name}\nRead ${e.path} and follow it.\n`;
 
@@ -9,6 +10,8 @@ export function renderFull(entries, budget = 9000) {
   for (const e of entries) {
     let block;
     try {
+      const st = statSync(e.path);
+      if (!st.isFile() || st.size > MAX_SKILL) throw new Error("not a readable skill file");
       const { body } = parseSkill(readFileSync(e.path, "utf8"));
       block = `## Skill: ${e.name}\nSkill dir: ${dirname(e.path)}\n${body.endsWith("\n") ? body : body + "\n"}`;
     } catch { block = readLine(e); }

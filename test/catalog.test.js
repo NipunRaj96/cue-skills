@@ -41,7 +41,7 @@ test("resolve prefers project > user > plugin; plugin:name exact", () => {
   skill(join(h, ".claude/plugins/cache/m/caveman/1.0.0/skills/caveman"), "caveman");
   skill(join(cwd, ".claude/skills/proj-only"), "proj-only");
   skill(join(cwd, ".claude/skills/caveman"), "caveman");
-  const cat = buildCatalog(scanRoots({ cwd }));
+  const cat = buildCatalog(scanRoots({ cwd, rules: { projectStatus: "trusted" } }));
   assert.equal(resolve(cat, "caveman").kind, "project");
   assert.equal(resolve(cat, "caveman:caveman").kind, "plugin");
   assert.equal(resolve(cat, "caveman:caveman").plugin, "caveman");
@@ -74,10 +74,18 @@ test("loadCatalog caches and rebuilds on mtime change", () => {
   assert.deepEqual(loadCatalog({ cwd }).map((e) => e.name), ["one", "two"]);
 });
 
-test("walk visits at most 5000 dirs per root", () => {
+test("walk visits at most 20000 dirs in total across roots", () => {
   const { h, cwd } = fixture();
-  const root = join(h, ".claude/skills");
-  for (let i = 0; i < 5100; i++) mkdirSync(join(root, "d" + String(i).padStart(4, "0")), { recursive: true });
-  skill(join(root, "zzz"), "zzz");
+  for (const r of [".claude/skills", ".agents/skills"])
+    for (let i = 0; i < 12000; i++) mkdirSync(join(h, r, "d" + String(i).padStart(5, "0")), { recursive: true });
+  skill(join(h, ".agents/skills/zzz"), "zzz"); // past the shared cap, though under 20000 within its own root
   assert.equal(buildCatalog(scanRoots({ cwd })).length, 0);
+});
+
+test("project skills are ignored unless the project is trusted", () => {
+  const { cwd } = fixture();
+  skill(join(cwd, ".claude/skills/p"), "p");
+  assert.equal(buildCatalog(scanRoots({ cwd })).length, 0);
+  assert.equal(buildCatalog(scanRoots({ cwd, rules: { projectStatus: "changed" } })).length, 0);
+  assert.equal(buildCatalog(scanRoots({ cwd, rules: { projectStatus: "trusted" } })).length, 1);
 });
