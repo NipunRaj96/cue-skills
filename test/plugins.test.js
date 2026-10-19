@@ -32,6 +32,23 @@ test("opencode plugin pushes system text and captures prompt", async () => {
   await hooks["experimental.chat.system.transform"]({}, { system: [] }); // no sessionID: no throw
 });
 
+test("opencode chat.message injects a synthetic reminder part only when skills are active", async () => {
+  const { h, cwd } = fixture();
+  get("opencode").install();
+  const f = join(h, ".config/opencode/plugins/cue-skills.js");
+  const mk = async (n) => (await import(pathToFileURL(f).href + "?t=" + n)).CueSkills({ directory: cwd });
+  const parts = [{ id: "prt_1", type: "text", text: "fix the ui", messageID: "m1" }];
+  await (await mk(2))["chat.message"]({ sessionID: "s" }, { message: { id: "m1" }, parts });
+  assert.equal(parts.length, 2);
+  assert.match(parts[1].text, /^Active skills: frontend-design/);
+  assert.deepEqual([parts[1].type, parts[1].synthetic, parts[1].sessionID, parts[1].messageID], ["text", true, "s", "m1"]);
+  assert.match(parts[1].id, /^prt_/);
+  writeFileSync(join(h, ".cue/rules.yaml"), "always: []\n");
+  const none = [{ type: "text", text: "hello" }];
+  await (await mk(3))["chat.message"]({ sessionID: "s2" }, { message: { id: "m2" }, parts: none });
+  assert.equal(none.length, 1);
+});
+
 test("opencode uninstall removes file", () => {
   fixture();
   const a = get("opencode");
@@ -42,7 +59,7 @@ test("opencode uninstall removes file", () => {
   assert.equal(a.handle("x", {}), "");
 });
 
-test("openclaw install copies plugin, execs CLI; plugin returns appendSystemContext", async () => {
+test("openclaw install copies plugin, execs CLI; plugin returns appendSystemContext and prependContext", async () => {
   const { h, cwd } = fixture();
   const calls = [];
   const a = get("openclaw");
@@ -55,6 +72,7 @@ test("openclaw install copies plugin, execs CLI; plugin returns appendSystemCont
   (await import(pathToFileURL(join(dir, "index.js")).href)).default({ on: (n, fn) => (handlers[n] = fn) });
   const r = await handlers.before_prompt_build({ prompt: "fix ui" }, { sessionKey: "k", workspaceDir: cwd });
   assert.match(r.appendSystemContext, /## Skill: frontend-design/);
+  assert.match(r.prependContext, /^Active skills: frontend-design/);
   for (const f of ["package.json", "openclaw.plugin.json"]) assert.equal(JSON.parse(readFileSync(join(dir, f), "utf8")).version, "0.1.0");
   a.uninstall("x", { exec: (...c) => calls.push(c) });
   assert.deepEqual(calls[1].slice(0, 2), ["openclaw", ["plugins", "uninstall", "cue-skills", "--force"]]);

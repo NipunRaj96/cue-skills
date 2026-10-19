@@ -19,6 +19,7 @@ export function run({ agent, session = "default", phase, reset = false, prompt =
 
     let text;
     if (phase === "system") text = renderFull(entries);
+    else if (phase === "remind") text = reminder(entries); // stateless: reminder line only
     else {
       if (reset) resetState(agent, session);
       const seen = loadState(agent, session);
