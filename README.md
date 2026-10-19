@@ -47,6 +47,8 @@ skillDirs: [~/my-skills]          # extra directories to scan
 
 Skills are found in the standard skill folders of each agent, in installed Claude Code plugins, and in `skillDirs`. Use `plugin:name` to pick a skill from a specific plugin.
 
+`files` globs: `**` matches across directories only as a whole path segment (`src/**/x.ts`). Inside a segment, as in `src/**.ts`, it acts like `*`. A trailing `a/**` also matches `a`.
+
 ## Supported surfaces
 
 A surface is one config home. Products that share a config home between their CLI and IDE need one adapter. Tested means checked against the real agent; experimental means built from the agent's documentation.

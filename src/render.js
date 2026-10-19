@@ -12,6 +12,7 @@ export function renderFull(entries, budget = 9000) {
     try {
       // project entries: never follow a link, stay inside the project (the cached catalog may be stale)
       const text = readRegular(e.path, MAX_SKILL, e.kind === "project" ? { base: e.base || "\0", nofollow: true } : {});
+      if (text === null && e.kind === "project") continue; // never point the agent at a rejected project path
       if (text === null) throw new Error("not a readable skill file");
       const { body } = parseSkill(text);
       block = `## Skill: ${e.name}\nSkill dir: ${dirname(e.path)}\n${body.endsWith("\n") ? body : body + "\n"}`;
