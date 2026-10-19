@@ -29,3 +29,13 @@ export function turnMetrics(reply, usageOut, steps = null) {
     reply: String(reply ?? "").slice(0, 2000),
   };
 }
+
+// Least-squares slope of y on x over [x, y] pairs; pairs with a null/NaN y are dropped.
+// null when fewer than 2 points or all x equal. Negative caveman_score slope over turns = drift.
+export function slope(pairs) {
+  const p = pairs.filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y));
+  if (p.length < 2) return null;
+  const mx = p.reduce((a, [x]) => a + x, 0) / p.length, my = p.reduce((a, [, y]) => a + y, 0) / p.length;
+  const sxx = p.reduce((a, [x]) => a + (x - mx) ** 2, 0);
+  return sxx ? p.reduce((a, [x, y]) => a + (x - mx) * (y - my), 0) / sxx : null;
+}

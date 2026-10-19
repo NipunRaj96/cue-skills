@@ -1,0 +1,17 @@
+{
+  "compactAfter": 6,
+  "turns": [
+    "Explain what the get method in cache.js does, step by step, and why it re-inserts the entry at the end.",
+    "Compare tracking recency with Map insertion order, as this module does, against a doubly linked list plus a Map. Which one fits this module better, and why?",
+    "Review this diff before I merge it. Does the module still do what it needs to? Do not change any files for this one.\n\n```diff\n   get(key) {\n     const e = this.map.get(key);\n     if (!e) return undefined;\n     if (e.expires && e.expires <= this.now()) {\n       this.map.delete(key);\n       return undefined;\n     }\n-    this.map.delete(key);\n     this.map.set(key, e);\n     return e.value;\n   }\n```",
+    "Add a peek(key) method to Cache that returns the value without changing recency and without extending its life. Add a test for it and run the tests.",
+    "Write a commit message for the change you just made.",
+    "Walk me through exactly what happens, line by line, when the cache is full and set is called with a key that is not in it yet.",
+    "What could go wrong with the TTL handling in this module? Think about clock changes, entries that are never read again, and the interaction with the size limit.",
+    "Let set take an optional third argument, ttlMs, that overrides the cache-wide ttlMs for that one entry. Update the tests and run them.",
+    "Review the change you just made as if a teammate had sent it as a pull request. What would you flag, and what would you approve?",
+    "Compare expiring entries lazily on read, as this module does, with a periodic sweep timer. When would each one be the better choice?",
+    "Explain to a new teammate what the test file covers, what it misses, and how you would extend it.",
+    "Write a commit message and a pull request description that cover all the changes made in this session."
+  ]
+}

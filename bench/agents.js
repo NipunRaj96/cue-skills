@@ -1,7 +1,7 @@
 // One adapter per agent. turn() returns { text, usageOut (null if unknown), error }.
 // All commands were verified against the real CLIs; see bench/README.md for the notes.
 import { spawn, spawnSync } from "node:child_process";
-import { writeFileSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
+import { writeFileSync, mkdirSync, rmSync, symlinkSync, realpathSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -80,9 +80,44 @@ function claudeSettings(runDir, mode) {
   return f;
 }
 
+// Compaction (drift suite only). compact(sess, runDir) -> { error? }; absent means unsupported.
+// Claude Code and Antigravity treat "/compact" as a slash command in headless mode: the reply
+// is empty and no model usage is reported, so it goes through turn() to keep the session state.
+async function slashCompact(s, runDir) {
+  const r = await this.turn(s, runDir, "/compact");
+  return { error: r.error };
+}
+
+// OpenCode has no headless compact command ("run --command" only knows init, review and
+// custom commands). Its server API does: POST /session/:id/summarize. The server shares the
+// on-disk session store with `opencode run`, so a later `run -c` continues the compacted session.
+async function opencodeCompact(s, runDir) {
+  const port = 20000 + Math.floor(Math.random() * 20000), base = `http://127.0.0.1:${port}`;
+  const p = spawn("opencode", ["serve", "--hostname", "127.0.0.1", "--port", String(port)], { cwd: runDir, stdio: "ignore", detached: true });
+  try {
+    let up = false;
+    for (let i = 0; i < 40 && !up; i++) {
+      up = await fetch(`${base}/session`).then((r) => r.ok, () => false);
+      if (!up) await new Promise((r) => setTimeout(r, 500));
+    }
+    if (!up) return { error: "opencode serve did not start" };
+    const dir = realpathSync(runDir);
+    const all = await (await fetch(`${base}/session`)).json();
+    const ses = all.filter((x) => x.directory === dir).sort((a, b) => b.time.updated - a.time.updated)[0];
+    if (!ses) return { error: "no opencode session for this run dir" };
+    const r = await fetch(`${base}/session/${ses.id}/summarize`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ providerID: "ollama", modelID: OLLAMA_MODEL }), signal: AbortSignal.timeout(TURN_TIMEOUT_MS),
+    });
+    return r.ok ? {} : { error: `summarize HTTP ${r.status}` };
+  } catch (e) { return { error: String(e.message ?? e).slice(0, 200) }; }
+  finally { try { process.kill(-p.pid, "SIGKILL"); } catch { /* gone */ } }
+}
+
 export const AGENTS = {
   claude: {
     label: "Claude Code",
+    compact: slashCompact,
     async open(runDir, mode) { return { settings: claudeSettings(runDir, mode), n: 0 }; },
     async turn(s, runDir, prompt) {
       const a = ["launch", "claude", "--model", OLLAMA_MODEL, "-y", "--", "-p", prompt, "--settings", s.settings, "--output-format", "json", "--dangerously-skip-permissions"];
@@ -94,6 +129,7 @@ export const AGENTS = {
   },
   opencode: {
     label: "OpenCode",
+    compact: opencodeCompact,
     async open(runDir) {
       writeFileSync(join(runDir, "opencode.json"), JSON.stringify({ $schema: "https://opencode.ai/config.json", provider: { ollama: { models: { [OLLAMA_MODEL]: {} } } } }));
       return { n: 0 };
@@ -124,6 +160,7 @@ export const AGENTS = {
   },
   antigravity: {
     label: "Antigravity",
+    compact: slashCompact,
     async open() { return { id: null, cum: 0 }; },
     async turn(s, runDir, prompt) {
       const a = ["-p", prompt, "--model", "claude-sonnet-4-6", "--output-format", "json", "--dangerously-skip-permissions", "--sandbox"];

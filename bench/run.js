@@ -8,7 +8,7 @@ import { spawnSync } from "node:child_process";
 import { loadCatalog, resolve } from "../src/catalog.js";
 import { parseSkill } from "../src/frontmatter.js";
 import { AGENTS, ROOT } from "./agents.js";
-import { turnMetrics, locFromNumstat } from "./metrics.js";
+import { turnMetrics, locFromNumstat, slope } from "./metrics.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MODES = ["none", "manual", "cue"];
@@ -16,6 +16,7 @@ const RULES = join(homedir(), ".cue", "rules.yaml");
 const RULES_BAK = join(ROOT, "rules.yaml.bak");
 const RULES_BY_MODE = { none: "# bench: no rules\n", manual: "# bench: no rules\n", cue: "always: [caveman, ponytail]\n" };
 const FAILS_BEFORE_SKIP = 3;
+const SUITES = { default: "tasks", drift: "drift" }; // suite -> directory under bench/
 
 // ---- resume logic (pure) ----
 export const sessionKey = (r) => [r.agent, r.mode, r.task, r.repeat].join("|");
@@ -76,6 +77,37 @@ export function summarize(rows, nTurns = 4) {
   return out.join("\n");
 }
 
+// Drift suite: one table per agent, turns as rows, caveman_score and out_tokens per mode as columns,
+// then the per-mode slope of caveman_score against turn (negative = the skill decays).
+export function summarizeDrift(rows, nTurns = Math.max(0, ...rows.map((r) => r.turn || 0))) {
+  const out = ["# Cue drift summary", ""];
+  const turnRows = rows.filter((r) => r.turn >= 1 && !r.error);
+  for (const a of [...new Set(rows.map((r) => r.agent))]) {
+    const modes = MODES.filter((m) => turnRows.some((r) => r.agent === a && r.mode === m));
+    out.push(`## ${a}`, "");
+    if (!modes.length) {
+      const why = [...new Set(rows.filter((r) => r.agent === a && r.skipped).map((r) => r.skipped))];
+      out.push(why.length ? `Skipped: ${why.join("; ")}` : "No completed turns.", "");
+      continue;
+    }
+    const of = (m) => turnRows.filter((r) => r.agent === a && r.mode === m);
+    out.push(`| turn | ${modes.map((m) => `${m} caveman | ${m} out_tokens`).join(" | ")} |`, `|---|${modes.map(() => "---|---|").join("")}`);
+    for (let t = 1; t <= nTurns; t++) {
+      const cell = (m) => { const x = of(m).filter((r) => r.turn === t); return `${f(mean(x.map((r) => r.caveman_score)), 3)} | ${f(mean(x.map((r) => r.out_tokens)), 0)}`; };
+      out.push(`| ${t} | ${modes.map(cell).join(" | ")} |`);
+    }
+    out.push("", "| mode | n | slope of caveman_score per turn | slope of out_tokens per turn |", "|---|---|---|---|");
+    for (const m of modes) {
+      const x = of(m);
+      out.push(`| ${m} | ${new Set(x.map(sessionKey)).size} | ${f(slope(x.map((r) => [r.turn, r.caveman_score])), 4)} | ${f(slope(x.map((r) => [r.turn, r.out_tokens])), 2)} |`);
+    }
+    const comp = [...new Set(rows.filter((r) => r.agent === a && r.compaction).map((r) => `${r.mode}: ${r.compaction} (after turn ${r.after_turn ?? "-"})`))];
+    if (comp.length) out.push("", `Compaction: ${comp.join("; ")}`);
+    out.push("");
+  }
+  return out.join("\n");
+}
+
 // ---- rules.yaml safety ----
 function backupRules() {
   mkdirSync(ROOT, { recursive: true });
@@ -106,17 +138,19 @@ function skillBodies() {
 }
 
 function parseArgs(argv) {
-  const o = { agents: Object.keys(AGENTS), modes: MODES, tasks: null, repeats: 1, out: null, turns: null };
+  const o = { agents: Object.keys(AGENTS), modes: MODES, tasks: null, repeats: 1, out: null, turns: null, suite: "default" };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i], v = argv[i + 1];
     if (k === "--agents") o.agents = v.split(","), i++;
     else if (k === "--modes") o.modes = v.split(","), i++;
     else if (k === "--tasks") o.tasks = v.split(","), i++;
     else if (k === "--repeats") o.repeats = parseInt(v, 10), i++;
+    else if (k === "--suite") o.suite = v, i++; // default (bench/tasks) or drift (bench/drift)
     else if (k === "--out") o.out = v, i++;
     else if (k === "--turns") o.turns = parseInt(v, 10), i++; // smoke runs: cap turns per session
     else throw new Error(`unknown option ${k}`);
   }
+  if (!SUITES[o.suite]) throw new Error(`unknown suite ${o.suite}; known: ${Object.keys(SUITES).join(", ")}`);
   for (const a of o.agents) if (!AGENTS[a]) throw new Error(`unknown agent ${a}; known: ${Object.keys(AGENTS).join(", ")}`);
   for (const m of o.modes) if (!MODES.includes(m)) throw new Error(`unknown mode ${m}`);
   return o;
@@ -124,13 +158,15 @@ function parseArgs(argv) {
 
 async function main() {
   const o = parseArgs(process.argv.slice(2));
-  const allTasks = readdirSync(join(HERE, "tasks"), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+  const dir = SUITES[o.suite], drift = o.suite === "drift";
+  const allTasks = readdirSync(join(HERE, dir),{ withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
   const tasks = o.tasks ?? allTasks;
   for (const t of tasks) if (!allTasks.includes(t)) throw new Error(`unknown task ${t}; known: ${allTasks.join(", ")}`);
   const out = o.out ?? join(HERE, "results", new Date().toISOString().replace(/[:.]/g, "-"));
   mkdirSync(out, { recursive: true });
   const runsFile = join(out, "runs.jsonl");
-  const def = Object.fromEntries(tasks.map((t) => [t, JSON.parse(readFileSync(join(HERE, "tasks", t, "task.json"), "utf8")).turns]));
+  const spec = Object.fromEntries(tasks.map((t) => [t, JSON.parse(readFileSync(join(HERE, dir, t, "task.json"), "utf8"))]));
+  const def = Object.fromEntries(tasks.map((t) => [t, spec[t].turns]));
   const nOf = (t) => Math.min(def[t].length, o.turns ?? Infinity);
 
   const rows0 = readRows(runsFile);
@@ -153,7 +189,7 @@ async function main() {
     for (const agent of o.agents) {
       const A = AGENTS[agent];
       for (const mode of o.modes) for (const task of tasks) for (let repeat = 1; repeat <= o.repeats; repeat++) {
-        const base = { agent, mode, task, repeat };
+        const base = { ...(drift && { suite: "drift" }), agent, mode, task, repeat };
         if (done.has(sessionKey(base))) continue;
         const why = A.skipModes?.[mode] ?? skipAgent[agent];
         if (why) {
@@ -163,7 +199,7 @@ async function main() {
         writeFileSync(RULES, RULES_BY_MODE[mode]);
         const runDir = join(ROOT, `${agent}-${mode}-${task}-${repeat}-${Date.now()}`);
         mkdirSync(runDir, { recursive: true });
-        cpSync(join(HERE, "tasks", task, "repo"), runDir, { recursive: true });
+        cpSync(join(HERE, dir, task, "repo"), runDir, { recursive: true });
         git(runDir, "init", "-q"); git(runDir, "add", "-A"); git(runDir, "commit", "-qm", "base");
         const sess = await A.open(runDir, mode);
         const n = nOf(task);
@@ -187,13 +223,19 @@ async function main() {
             console.error(`${agent}: ${skipAgent[agent]}`);
           }
           if (res.error) break;
+          if (spec[task].compactAfter === turn && turn < n) { // no metrics for this step; its status is a turn-0 row
+            const c = A.compact ? await A.compact(sess, runDir) : { unsupported: true };
+            const compaction = c.unsupported ? "unsupported" : c.error ? `failed: ${c.error}` : "ok";
+            log({ ...base, turn: 0, after_turn: turn, compaction });
+            console.log(`${agent} ${mode} ${task} #${repeat} compact after t${turn}: ${compaction}`);
+          }
         }
       }
     }
   } finally {
     restoreRules();
     for (const a of o.agents) AGENTS[a].finish?.();
-    writeFileSync(join(out, "summary.md"), summarize(readRows(runsFile)));
+    writeFileSync(join(out, "summary.md"), (drift ? summarizeDrift : summarize)(readRows(runsFile)));
     console.log(`results: ${out}`);
   }
 }

@@ -15,3 +15,25 @@ Notes:
 - Codex runs use an isolated `CODEX_HOME=/tmp/cue-bench/codex-home`. Its `cue` mode is skipped: headless Codex does not run untrusted hooks.
 - OpenClaw uses a dedicated `cue-bench` agent whose workspace is a symlink, `/tmp/cue-bench/oc-ws`, repointed at each run dir.
 - `out_tokens` comes from agent usage and includes tool-call turns; `words` and `caveman_score` use the final reply only. Antigravity and Codex report cumulative usage per session; the harness takes deltas.
+
+## Drift suite
+
+```
+node bench/run.js --suite drift [--agents a,b] [--modes none,manual,cue] [--repeats N] [--turns N] [--out dir]
+```
+
+Answers: over a long session, does a skill pasted once by hand (`manual`) decay while Cue (`cue`) holds it? Tasks live in `bench/drift/<id>/` (`repo/`, `task.json` with `turns` and `compactAfter`). The one task, `cache-session`, has 12 explanation/review/commit-message turns and two small code edits, and no prompt mentions brevity or style. Rows in `runs.jsonl` have the usual shape plus `suite: "drift"`.
+
+After turn `compactAfter` (6) the harness compacts the agent's context where it can. That step records no metrics: only a `turn: 0` row with `compaction: "ok" | "failed: ..." | "unsupported"`. A failed or unsupported compaction does not stop the session.
+
+`summary.md` has, per agent, a table with turns 1 to 12 as rows and `caveman_score` / `out_tokens` of each mode as columns, then the per-mode least-squares slope of `caveman_score` (and `out_tokens`) against turn. A negative `caveman_score` slope means drift.
+
+| Agent | Compaction | How |
+|---|---|---|
+| Claude Code | verified | `ollama launch claude --model <m> -y -- -p "/compact" --settings <s> --output-format json -c` (empty result, no usage, session continues) |
+| Antigravity | verified | `agy -p "/compact" --conversation <id> --model <m> --output-format json --sandbox` (empty response; `/compact` is listed by agy as a slash command) |
+| OpenCode | verified, needs a server | no CLI command; `opencode serve` then `POST /session/<id>/summarize {providerID, modelID}`; later `opencode run -c` continues the compacted session |
+| OpenClaw | unverified, not used | `/compact` is handled by the chat auto-reply layer, and the `openclaw agent` path does not appear to route it; skipped, recorded as `unsupported` |
+| Codex | not used | `codex exec` has no compact command; recorded as `unsupported` |
+
+`npm test` runs `node --test test/*.test.js`, so the bench task repos (which start with failing tests) are not picked up.
