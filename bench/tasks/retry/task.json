@@ -1,0 +1,6 @@
+{ "turns": [
+  "Read retry.js and explain what it does and how the delay grows between attempts.",
+  "Explain two weaknesses of this retry helper in production use.",
+  "The last two tests in retry.test.js fail. Make them pass with minimal changes to retry.js, then run all the tests.",
+  "Explain why maxDelay matters when factor is large, with a short example."
+] }

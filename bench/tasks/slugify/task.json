@@ -1,0 +1,6 @@
+{ "turns": [
+  "Implement slugify(text) in slugify.js so the first four tests in slugify.test.js pass. Run the tests.",
+  "Explain how your implementation handles accented characters and why you chose that approach.",
+  "Now add the optional { maxLength } argument so the last test passes too. Run all the tests.",
+  "Explain one edge case where slugify could still surprise a user, and how you would handle it."
+] }

@@ -1,0 +1,6 @@
+{ "turns": [
+  "The tests in paginate.test.js are failing. Find the cause and fix paginate.js. Run the tests.",
+  "Explain what was wrong, in terms a new teammate would understand.",
+  "Add a hasNext boolean to the returned object. Add one test for it and run all tests.",
+  "Explain how you would test paginate with very large inputs, and what could go wrong."
+] }

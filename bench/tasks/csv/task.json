@@ -1,0 +1,6 @@
+{ "turns": [
+  "Implement parseCsv in csv.js so the tests in csv.test.js pass. Run the tests.",
+  "Explain how your parser decides whether a comma or newline is a separator or part of a field.",
+  "Add an optional second argument { delimiter } (default ',') and a test for tab-separated input. Run all tests.",
+  "Explain the main limitations of this parser compared with a full RFC 4180 library."
+] }

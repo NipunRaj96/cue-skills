@@ -1,0 +1,6 @@
+{ "turns": [
+  "Some tests in wordfreq.test.js fail. Find the bugs and fix wordfreq.js. Run the tests.",
+  "Explain each bug you fixed and why it happened.",
+  "Add an optional stopWords array argument to topWords that excludes those words. Add a test and run all tests.",
+  "Explain what happens with non-English text or apostrophes in this implementation, and how to improve it."
+] }
