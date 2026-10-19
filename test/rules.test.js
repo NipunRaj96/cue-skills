@@ -9,6 +9,7 @@ process.env.HOME = join(tmp, "home");
 mkdirSync(join(tmp, "home/.cue"), { recursive: true });
 const { loadRules } = await import("../src/rules.js");
 const { select } = await import("../src/select.js");
+const { trustCommand } = await import("../src/trust.js");
 
 const names = ["caveman", "ponytail", "frontend-design", "a", "b", "uni"];
 const catalog = names.map((name) => ({ name, plugin: null, description: "", path: `/x/${name}/SKILL.md`, size: 1, kind: "user" }));
@@ -86,6 +87,8 @@ test("project rules append to global, dedupe, skillDirs", () => {
   mkdirSync(join(root, ".cue"));
   writeFileSync(globalFile, "always: [a]\nnever: n\nskillDirs: ~/s\n");
   writeFileSync(join(root, ".cue/rules.yaml"), "always: [b, a]\nwhen:\n  - prompt: ui\n    use: frontend-design\n");
+  assert.deepEqual(loadRules(root).always, ["a"]); // untrusted: project file ignored
+  trustCommand(root);
   const r = loadRules(root);
   assert.deepEqual(r.always, ["a", "b"]);
   assert.deepEqual(r.never, ["n"]);
@@ -99,6 +102,7 @@ test("missing files empty; bad types collect errors", () => {
   mkdirSync(join(root, ".cue"));
   writeFileSync(globalFile, "");
   writeFileSync(join(root, ".cue/rules.yaml"), "always: 5\nwhen: [{use: {x: 1}}]\n");
+  trustCommand(root);
   const r = loadRules(root);
   assert.deepEqual(r.always, []);
   assert.equal(r.errors.length, 2);
@@ -110,8 +114,10 @@ test("when without use errors; relative skillDirs resolve against rules file", (
   mkdirSync(join(root, ".cue"));
   writeFileSync(globalFile, "");
   writeFileSync(join(root, ".cue/rules.yaml"), "skillDirs: [local, /abs, ~/h]\nwhen:\n  - prompt: ui\n");
+  trustCommand(root);
   const r = loadRules(root);
-  assert.deepEqual(r.skillDirs, [join(root, ".cue/local"), "/abs", "~/h"]);
+  assert.deepEqual(r.projectSkillDirs, [join(root, ".cue/local")]); // absolute and ~ rejected
+  assert.match(r.errors.join("\n"), /\/abs: project skillDirs must be relative/);
   assert.match(r.errors.join("\n"), /when\[0\]: missing use/);
 });
 

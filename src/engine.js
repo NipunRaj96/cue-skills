@@ -4,7 +4,6 @@ import { select } from "./select.js";
 import { renderFull, reminder, REMINDER_RESERVE } from "./render.js";
 import { loadState, saveState, resetState } from "./state.js";
 import { logEvent } from "./log.js";
-import { expandHome } from "./paths.js";
 
 const EMPTY = () => ({ text: "", skills: [] });
 
@@ -13,8 +12,8 @@ export function run({ agent, session = "default", phase, reset = false, prompt =
   if (process.env.CUE_DISABLE === "1") return EMPTY();
   try {
     const rules = loadRules(cwd);
-    const catalog = loadCatalog({ cwd, extraDirs: rules.skillDirs.map(expandHome) });
-    const { selected, unresolved } = select({ prompt, files, cwd, rules, catalog });
+    const catalog = loadCatalog({ cwd, rules });
+    const { selected, unresolved, errors } = select({ prompt, files, cwd, rules, catalog });
     const entries = selected.map((s) => s.entry);
     const id = (e) => (e.plugin ? `${e.plugin}:${e.name}` : e.name);
 
@@ -30,7 +29,7 @@ export function run({ agent, session = "default", phase, reset = false, prompt =
       text = bodies && rem ? `${bodies}\n${rem}` : bodies || rem;
     }
     const skills = selected.map((s) => ({ name: s.entry.name, reason: s.reason }));
-    logEvent({ agent, session, event: phase, skills, chars: text.length, unresolved, errors: rules.errors });
+    logEvent({ agent, session, event: phase, skills, chars: text.length, unresolved, errors: [...rules.errors, ...errors] });
     return { text, skills };
   } catch (e) {
     logEvent({ agent, session, event: phase, error: e.message });

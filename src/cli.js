@@ -1,9 +1,10 @@
-import { readFileSync, existsSync, mkdirSync, copyFileSync, rmSync, realpathSync } from "node:fs";
+import { readFileSync, existsSync, copyFileSync, rmSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { adapters } from "./adapters/index.js";
 import { runHook } from "./hook.js";
-import { cueDir, home, expandHome } from "./paths.js";
+import { cueDir, ensureCueDir, home } from "./paths.js";
+import { trustCommand } from "./trust.js";
 import { loadRules } from "./rules.js";
 import { loadCatalog, scanRoots } from "./catalog.js";
 import { select } from "./select.js";
@@ -11,7 +12,7 @@ import { readLog } from "./log.js";
 import { syncAgentsMd } from "./sync.js";
 
 const pkg = () => JSON.parse(readFileSync(new URL("../package.json", import.meta.url)));
-const USAGE = "usage: cue-skills <init [--only id,id] | uninstall | scan | list | status | why [-n N] | sync | --version>";
+const USAGE = "usage: cue-skills <init [--only id,id] | uninstall | scan | list | status | why [-n N] | sync | trust [--revoke] | --version>";
 const BIN = fileURLToPath(new URL("../bin/cue-skills.js", import.meta.url));
 const cut = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 const say = console.log;
@@ -55,7 +56,7 @@ function init(args) {
   }
   const rules = join(cueDir(), "rules.yaml");
   if (!existsSync(rules)) {
-    mkdirSync(cueDir(), { recursive: true });
+    ensureCueDir();
     copyFileSync(new URL("../templates/rules.yaml", import.meta.url), rules);
     say(`Created ${rules}`);
   }
@@ -73,13 +74,17 @@ function status() {
   const cwd = process.cwd();
   const rules = loadRules(cwd);
   say(`rules: ${join(cueDir(), "rules.yaml")}, ${join(cwd, ".cue/rules.yaml")} (project root)`);
+  say(`project rules: ${rules.projectStatus}${rules.projectStatus === "untrusted" || rules.projectStatus === "changed" ? " (ignored; run: cue-skills trust)" : ""}`);
   for (const e of rules.errors) say(`rule error: ${e}`);
-  const catalog = loadCatalog({ cwd, extraDirs: rules.skillDirs.map(expandHome) });
+  const catalog = loadCatalog({ cwd, rules });
   const { selected, unresolved } = select({ prompt: "", files: [], cwd, rules, catalog });
   say("active skills:");
   for (const s of selected) say(`  ${s.entry.name}  (${s.reason})`);
   if (!selected.length) say("  (none)");
   if (unresolved.length) say(`unresolved: ${unresolved.join(", ")}`);
+  const count = {};
+  for (const e of catalog) count[e.name] = (count[e.name] ?? 0) + 1;
+  for (const [n, c] of Object.entries(count)) if (c > 1) say(`warning: skill name "${n}" appears ${c} times in the catalog`);
   say("agent  detected  installed  status  stale");
   for (const a of adapters)
     say([a.label, a.detect() ? "yes" : "no", a.isInstalled() ? "yes" : "no", a.status, stale(a)].join("  "));
@@ -95,16 +100,15 @@ export async function main(argv) {
         rmSync(join(cueDir(), "catalog.json"), { force: true });
         const cwd = process.cwd();
         const rules = loadRules(cwd);
-        const extraDirs = rules.skillDirs.map(expandHome);
-        const c = loadCatalog({ cwd, extraDirs });
+        const c = loadCatalog({ cwd, rules });
         say(`${c.length} skills`);
-        for (const root of new Set(scanRoots({ cwd, extraDirs }).map((r) => r.root)))
+        for (const root of new Set(scanRoots({ cwd, rules }).map((r) => r.root)))
           say(`  ${root}: ${c.filter((e) => e.path.startsWith(root + "/")).length}`);
         break;
       }
       case "list": {
         const cwd = process.cwd();
-        const c = loadCatalog({ cwd, extraDirs: loadRules(cwd).skillDirs.map(expandHome) });
+        const c = loadCatalog({ cwd, rules: loadRules(cwd) });
         for (const e of c) say(`${e.name}  [${e.plugin ?? "-"}]  ${cut(e.description.replace(/\s+/g, " "), 60)}`);
         break;
       }
@@ -117,6 +121,7 @@ export async function main(argv) {
         break;
       }
       case "sync": say(syncAgentsMd(process.cwd())); break;
+      case "trust": say(trustCommand(process.cwd(), args.includes("--revoke"))); break;
       case "hook": {
         try {
           let input = "";
