@@ -1,7 +1,6 @@
-import { existsSync, readFileSync, mkdirSync, copyFileSync } from "node:fs";
-import { atomicWrite } from "./jsonfile.js";
-import { join } from "node:path";
-import { projectRoot, expandHome } from "./paths.js";
+import { readFileSync, mkdirSync, copyFileSync, lstatSync, realpathSync, writeFileSync, renameSync, constants } from "node:fs";
+import { join, dirname, sep } from "node:path";
+import { projectRoot } from "./paths.js";
 import { loadRules } from "./rules.js";
 import { loadCatalog } from "./catalog.js";
 import { select } from "./select.js";
@@ -10,32 +9,60 @@ import { renderFull } from "./render.js";
 const START = "<!-- cue-skills:start -->";
 const END = "<!-- cue-skills:end -->";
 
-function write(f, text) {
-  if (existsSync(f) && !existsSync(f + ".bak")) copyFileSync(f, f + ".bak");
-  atomicWrite(f, text);
+// Project files are untrusted territory: never follow a link, never leave the project.
+// Returns the lstat of an existing regular target (or null); throws a refusal otherwise.
+function check(f, realRoot) {
+  let st = null;
+  try { st = lstatSync(f); } catch (e) { if (e.code !== "ENOENT") throw new Error(`${f}: ${e.message}, refusing`); }
+  if (st && !st.isFile()) throw new Error(`${f}: not a regular file, refusing`);
+  // nearest existing ancestor of the parent must resolve inside the project (nothing is created before this)
+  for (let d = dirname(f); ; d = dirname(d)) {
+    try { lstatSync(d); } catch (e) { if (e.code === "ENOENT" && dirname(d) !== d) continue; throw new Error(`${f}: ${e.message}, refusing`); }
+    const r = realpathSync(d);
+    if (r !== realRoot && !r.startsWith(realRoot + sep)) throw new Error(`${f}: parent directory is outside the project, refusing`);
+    return st;
+  }
+}
+
+function write(f, text, st) {
+  mkdirSync(dirname(f), { recursive: true });
+  const bak = f + ".bak";
+  if (st) {
+    let has = true;
+    try { lstatSync(bak); } catch { has = false; }
+    if (!has) copyFileSync(f, bak, constants.COPYFILE_EXCL);
+  }
+  // exclusive tmp (never writes through a planted link), then rename over the regular target
+  const tmp = `${f}.tmp-${process.pid}`;
+  writeFileSync(tmp, text, { flag: "wx", mode: st ? st.mode & 0o777 : 0o644 });
+  renameSync(tmp, f);
 }
 
 export function syncAgentsMd(cwd) {
   const root = projectRoot(cwd);
+  const realRoot = realpathSync(root);
+  const md = join(root, "AGENTS.md");
+  const mdc = join(root, ".cursor/rules/cue-skills.mdc");
+  const mdSt = check(md, realRoot);
+  const cursor = (() => { try { return lstatSync(join(root, ".cursor")) && true; } catch { return false; } })();
+  const mdcSt = cursor ? check(mdc, realRoot) : null;
+
   const rules = loadRules(cwd);
-  const catalog = loadCatalog({ cwd, extraDirs: rules.skillDirs.map(expandHome) });
+  const catalog = loadCatalog({ cwd, rules });
   const { selected } = select({ prompt: "", files: [], cwd, rules: { ...rules, when: [] }, catalog });
   const bodies = renderFull(selected.map((s) => s.entry), Infinity);
   const block = `${START}\n${bodies}${END}`;
 
-  const md = join(root, "AGENTS.md");
-  const old = existsSync(md) ? readFileSync(md, "utf8") : "";
+  const old = mdSt ? readFileSync(md, "utf8") : "";
   const a = old.indexOf(START), b = old.indexOf(END, a);
   // unmatched START: replace to end of file
   const next = a >= 0 ? old.slice(0, a) + block + (b >= 0 ? old.slice(b + END.length) : "\n")
     : (old && !old.endsWith("\n") ? old + "\n" : old) + (old ? "\n" : "") + block + "\n";
-  write(md, next);
+  write(md, next, mdSt);
 
   const out = [`AGENTS.md: ${selected.length} skill(s) synced at ${md}`];
-  if (existsSync(join(root, ".cursor"))) {
-    const mdc = join(root, ".cursor/rules/cue-skills.mdc");
-    mkdirSync(join(root, ".cursor/rules"), { recursive: true });
-    write(mdc, `---\ndescription: cue-skills active skills\nalwaysApply: true\n---\n${bodies}`);
+  if (cursor) {
+    write(mdc, `---\ndescription: cue-skills active skills\nalwaysApply: true\n---\n${bodies}`, mdcSt);
     out.push(`Cursor rule written at ${mdc}`);
   }
   return out.join("\n");
