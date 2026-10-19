@@ -25,7 +25,7 @@ Adapters were installed with `cue-skills init --only <id>`.
 | OpenCode | 1.14.29 | ollama/gemma4:31b-cloud | pass | `experimental.chat.system.transform` injects the skill on every call. The model was set in a project-local `opencode.json`, because the models in the global config were retired upstream. |
 | OpenClaw | 2026.4.26 | ollama/gemma4:31b-cloud | pass | Tested with `openclaw agent --local --agent main`, through the `before_prompt_build` hook. Re-installing works, because install passes `--force`. |
 | Antigravity CLI (`agy`) | 1.4.2 | default | pass | See the Antigravity detail below. |
-| Claude Code CLI | 2.1.143 | (n/a) | pending | The CLI on this machine is not logged in. The hook output shape is covered by unit tests. |
+| Claude Code CLI | 2.1.143 | ollama/gemma4:31b-cloud via `ollama launch claude` | pass | Run on 2026-10-19 with the SessionStart and UserPromptSubmit hooks passed through `--settings`. The reply ended in PINEAPPLE. |
 
 **Antigravity detail:**
 - SessionStart sends the full skill body as a persistent `systemMessage`.

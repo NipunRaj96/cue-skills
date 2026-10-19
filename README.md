@@ -55,7 +55,7 @@ A surface is one config home. Products that share a config home between their CL
 
 | Product | Surfaces | Status |
 |---|---|---|
-| Claude Code | CLI, desktop Code tab, VS Code and JetBrains extensions | tested (unit), live pending |
+| Claude Code | CLI, desktop Code tab, VS Code and JetBrains extensions | tested (CLI) |
 | Antigravity | agy CLI, App and IDE (shared hooks file) | tested (agy CLI); App/IDE experimental |
 | OpenCode | TUI/CLI, desktop app | tested |
 | OpenClaw | gateway, every channel | tested |
