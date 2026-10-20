@@ -1,4 +1,5 @@
-// Offline picker eval: node bench/picker/eval.js [--tune] [--tune-only]
+// Offline picker eval: node bench/picker/eval.js [--tune | --holdout]
+// default: dev set (cases.json) only. --tune: grid-search on the dev set, never reads holdout.json. --holdout: blind set metrics.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { collapse } from "../../src/catalog.js";
@@ -7,11 +8,6 @@ import { queryParts, summarize } from "../../src/signals.js";
 import { CAP_TOKENS, THRESHOLDS, pickStep, planInjection } from "../../src/pick.js";
 
 const json = (f) => JSON.parse(readFileSync(new URL(`./${f}`, import.meta.url)));
-
-export const split = (cases) => ({
-  tune: cases.filter((_, i) => i % 10 < 7),
-  test: cases.filter((_, i) => i % 10 >= 7),
-});
 
 const prep = (cards) => { const c = collapse(cards); return { cards: c, index: buildIndex(c) }; };
 
@@ -63,7 +59,7 @@ export const evaluate = (cases, cards, thresholds) => evalPrepped(cases, prep(ca
 export function tune(cases, cards) {
   const p = prep(cards);
   let best = null;
-  for (let hi = 1; hi <= 15; hi += 0.5)
+  for (let hi = 1; hi <= 40; hi += 0.5)
     for (let lo = 0.5; lo <= hi; lo += 0.5)
       for (const margin of [1.1, 1.25, 1.5, 2]) {
         const m = evalPrepped(cases, p, { hi, lo, margin });
@@ -78,13 +74,17 @@ export function tune(cases, cards) {
 const row = (name, m) => `| ${name} | ${m.n} | ${m.positives} | ${m.neutral} | ${m.top1.toFixed(3)} | ${m.hit.toFixed(3)} | ${m.falseFire.toFixed(3)} | ${m.forbidHits} | ${m.tokensPerCase.toFixed(0)} | ${m.listAllTokens} |`;
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const cards = json("cards.json"), cases = json("cases.json"), { tune: tuneSet, test } = split(cases);
+  const cards = json("cards.json"), HEAD = "| set | n | positives | neutral | top1 | hit | falseFire | forbidHits | tokensPerCase | listAllTokens |\n|---|---|---|---|---|---|---|---|---|---|";
+  const holdout = process.argv.includes("--holdout"), tuning = process.argv.includes("--tune");
   let t = THRESHOLDS;
-  if (process.argv.includes("--tune")) { t = tune(tuneSet, cards); console.log(`Tuned thresholds: ${JSON.stringify(t)}\n`); }
-  console.log(`Thresholds: ${JSON.stringify(t)}\n`);
-  console.log("| split | n | positives | neutral | top1 | hit | falseFire | forbidHits | tokensPerCase | listAllTokens |\n|---|---|---|---|---|---|---|---|---|---|");
-  console.log(row("tune", evaluate(tuneSet, cards, t)));
-  if (!process.argv.includes("--tune-only")) console.log(row("test", evaluate(test, cards, t))); // --tune-only: never look at held-out while tuning
-  const stitch = cases.find((c) => c.id === "stitch-to-frontend");
-  console.log(`\nstitch-to-frontend: ${JSON.stringify(runCase(stitch, prep(cards), t).injected)}`);
+  const dev = json("cases.json");
+  if (tuning) { t = tune(dev, cards); console.log(`Tuned thresholds: ${JSON.stringify(t)}\n`); }
+  console.log(`Thresholds: ${JSON.stringify(t)}\n\n${HEAD}`);
+  console.log(row("dev", evaluate(dev, cards, t)));
+  if (holdout && !tuning) { // the only code path that reads holdout.json
+    const h = json("holdout.json");
+    console.log(row("holdout", evaluate(h, cards, t)));
+    const rep = h.filter((c) => /replicate/i.test(c.id) || /replicate/i.test(c.prompt ?? "") || /stitch/i.test(c.id));
+    for (const c of rep) console.log(`${c.id}: expect ${JSON.stringify(c.expect)} -> ${JSON.stringify(runCase(c, prep(cards), t).injected)}`);
+  }
 }

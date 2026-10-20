@@ -40,19 +40,25 @@ After turn `compactAfter` (6) the harness compacts the agent's context where it 
 
 ## Picker eval
 
-Offline eval of the automatic skill picker (BM25 over skill cards plus tool, file, failure and project signals). No model calls.
+Offline eval of the automatic skill picker (BM25F over skill cards: name x3, description and when_to_use x1, body x0.3 capped at 3000 words, plus tool, file, failure and project signals). No model calls. Run 2026-10-20.
 
 ```
-node bench/picker/freeze.js            # snapshot this machine's skill catalog into cards.json (home dir becomes ~)
-node bench/picker/eval.js              # tune and held-out tables under the shipped THRESHOLDS, plus the stitch-to-frontend case
-node bench/picker/eval.js --tune       # grid-search thresholds on the tune split first (--tune-only hides the held-out row)
+node bench/picker/freeze.js            # snapshot this machine's skill catalog (with bodies) into cards.json (home dir becomes ~)
+node bench/picker/eval.js              # dev-set metrics only
+node bench/picker/eval.js --tune       # grid-search thresholds on the dev set (never touches holdout.json)
+node bench/picker/eval.js --holdout    # also print blind held-out metrics
 ```
 
-`cases.json` holds labeled cases (written independently of the tuning; never edited to fit it). Case `i` is in the tune split if `i % 10 < 7`, else held out. Thresholds and vocabulary (stopwords, stemmer, `EXPAND`, `DEP_WORDS`, `MARKERS`) are tuned on the tune split only; `test/picker-eval.test.js` gates the held-out split against floors set from the first honest run.
+Shipped `THRESHOLDS = { hi: 24, lo: 8.5, margin: 1.1 }`. Result (blind held-out, `holdout.json`, 70 cases, one run, never used for tuning):
 
-Shipped `THRESHOLDS = { hi: 15, lo: 6, margin: 2 }` (2026-10-20):
-
-| split | n | positives | neutral | top1 | hit | falseFire | forbidHits | tokensPerCase | listAllTokens |
+| set | n | positives | neutral | top1 | hit | falseFire | forbidHits | tokensPerCase | listAllTokens |
 |---|---|---|---|---|---|---|---|---|---|
-| tune | 91 | 70 | 21 | 0.614 | 0.671 | 0.095 | 0 | 78 | 5676 |
-| test | 38 | 30 | 8 | 0.633 | 0.633 | 0.250 | 1 | 86 | 5676 |
+| holdout | 70 | 52 | 18 | 0.365 | 0.385 | 0.167 | 1 | 52 | 5676 |
+
+dev (tuned on, not an estimate of real-world accuracy), `cases.json`, 129 cases:
+
+| set | n | positives | neutral | top1 | hit | falseFire | forbidHits | tokensPerCase | listAllTokens |
+|---|---|---|---|---|---|---|---|---|---|
+| dev | 129 | 100 | 29 | 0.280 | 0.300 | 0.069 | 0 | 20 | 5676 |
+
+Label audit: `cases.json` was re-audited blind; 10 cases gained 13 acceptable skills and none were removed (log in `picker/label-audit.md`). `holdout.json` was written by a third independent labeler and is only read by `--holdout` and `test/picker-eval.test.js`. Vocabulary (`EXPAND`, `DEP_WORDS`, `MARKERS`) is convention-level only and no longer fitted to cases. `npm test` gates both sets: dev as a regression guard, holdout against floors set from the one blind run (value minus 0.05).
