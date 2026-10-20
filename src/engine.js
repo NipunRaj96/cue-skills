@@ -1,4 +1,4 @@
-import { loadCatalog } from "./catalog.js";
+import { loadCatalog, entryId as id } from "./catalog.js";
 import { loadRules } from "./rules.js";
 import { select } from "./select.js";
 import { renderFull, reminder, REMINDER_RESERVE } from "./render.js";
@@ -15,7 +15,6 @@ export function run({ agent, session = "default", phase, reset = false, prompt =
     const catalog = loadCatalog({ cwd, rules });
     const { selected, unresolved, errors } = select({ prompt, files, cwd, rules, catalog });
     const entries = selected.map((s) => s.entry);
-    const id = (e) => (e.plugin ? `${e.plugin}:${e.name}` : e.name);
 
     let text;
     if (phase === "system") text = renderFull(entries);

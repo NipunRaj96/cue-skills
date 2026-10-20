@@ -11,6 +11,7 @@ const PROJECT = [".claude/skills", ".agents/skills", ".opencode/skills"];
 export const MAX_SKILL = 256 * 1024;
 const MAX_DIRS = 20000;
 const KIND_ORDER = ["project", "user", "plugin"];
+const PICK_ORDER = ["user", "project", "plugin"]; // picker precedence; resolve() keeps KIND_ORDER
 
 // follow=false (project roots): symlinked directories are never listed
 const dirs = (p, follow = true) => {
@@ -34,7 +35,7 @@ const inside = (p, base) => p === base || p.startsWith(base + sep);
 
 export function scanRoots({ cwd, rules = {} }) {
   const roots = [];
-  const add = (root, kind, plugin) => existsSync(root) && roots.push(plugin ? { root, kind, plugin } : { root, kind });
+  const add = (root, kind, plugin, version) => existsSync(root) && roots.push(plugin ? { root, kind, plugin, version } : { root, kind });
   const proj = projectRoot(cwd);
   if (rules.projectStatus === "trusted") {
     let base;
@@ -51,7 +52,7 @@ export function scanRoots({ cwd, rules = {} }) {
   for (const market of dirs(cache))
     for (const plugin of dirs(join(cache, market))) {
       const latest = dirs(join(cache, market, plugin)).sort(cmpVer).pop();
-      if (latest) add(join(cache, market, plugin, latest, "skills"), "plugin", plugin);
+      if (latest) add(join(cache, market, plugin, latest, "skills"), "plugin", plugin, latest);
     }
   for (const d of rules.skillDirs ?? []) add(expandHome(d), "user");
   return roots;
@@ -74,18 +75,22 @@ export function buildCatalog(roots) {
   const entries = [], budget = { n: 0 };
   // user/plugin roots first: a huge project cannot use up the shared dir budget
   for (const r of [...roots].sort((a, b) => (a.kind === "project") - (b.kind === "project"))) {
-    const { root, kind, plugin } = r;
+    const { root, kind, plugin, version } = r;
     const files = [];
     walk(root, 0, new Set(), files, r, budget);
     for (const path of files) {
       try {
         const text = readRegular(path, MAX_SKILL, kind === "project" ? { base: r.base, nofollow: true } : {});
         if (text === null) continue;
-        const { meta } = parseSkill(text);
+        const { meta, body } = parseSkill(text);
         entries.push({
           name: String(meta.name || basename(dirname(path))),
           plugin: plugin ?? null,
           description: String(meta.description ?? ""),
+          when_to_use: String(meta.when_to_use ?? meta["when-to-use"] ?? [meta.triggers ?? meta.trigger ?? []].flat().join(", ")),
+          tokens: Math.ceil(body.length / 4),
+          invocable_only: meta["disable-model-invocation"] === true,
+          version: version ?? null,
           path, size: Buffer.byteLength(text), kind, base: kind === "project" ? r.base : null,
         });
       } catch { /* unreadable or bad yaml: skip */ }
@@ -118,4 +123,20 @@ export function resolve(catalog, name) {
     if (e) return e;
   }
   return null;
+}
+
+export const entryId = (e) => (e.plugin ? `${e.plugin}:${e.name}` : e.name);
+
+// one entry per name, sorted by name: user > project > plugin; newest plugin version, then plugin name, then path
+export function collapse(entries) {
+  const cmp = (a, b) =>
+    PICK_ORDER.indexOf(a.kind) - PICK_ORDER.indexOf(b.kind)
+    || (a.kind === "plugin" ? cmpVer(b.version ?? "", a.version ?? "") || (a.plugin < b.plugin ? -1 : a.plugin > b.plugin ? 1 : 0) : 0)
+    || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  const best = new Map();
+  for (const e of entries) {
+    const c = best.get(e.name);
+    if (!c || cmp(e, c) < 0) best.set(e.name, e);
+  }
+  return [...best.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
