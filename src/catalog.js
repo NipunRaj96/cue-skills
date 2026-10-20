@@ -4,6 +4,7 @@ import { home, cueDir, ensureCueDir, projectRoot, expandHome } from "./paths.js"
 import { parseSkill } from "./frontmatter.js";
 import { readJson, writeJson } from "./jsonfile.js";
 import { readRegular } from "./safefile.js";
+import { buildIndex } from "./bm25.js";
 
 const GLOBAL = [".claude/skills", ".agents/skills", ".config/opencode/skills", ".openclaw/skills",
   ".gemini/config/skills", ".gemini/skills", ".cursor/skills", ".codex/skills"];
@@ -99,18 +100,20 @@ export function buildCatalog(roots) {
   return entries.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 }
 
-export function loadCatalog({ cwd, rules }) {
+export function loadAll({ cwd, rules }) {
   const roots = scanRoots({ cwd, rules });
   const key = JSON.stringify(roots.map((r) => [r.root, statSync(r.root).mtimeMs]));
   const file = join(cueDir(), "catalog.json");
   try {
     const c = readJson(file, null);
-    if (c && c.key === key) return c.entries;
+    if (c && c.v === 2 && c.key === key) return { entries: c.entries, cards: c.cards, index: c.index };
   } catch { /* corrupt cache: rebuild */ }
-  const entries = buildCatalog(roots);
-  try { ensureCueDir(); writeJson(file, { key, entries }, 0o600); } catch { /* cache is optional */ }
-  return entries;
+  const entries = buildCatalog(roots), cards = collapse(entries), index = buildIndex(cards);
+  try { ensureCueDir(); writeJson(file, { v: 2, key, entries, cards, index }, 0o600); } catch { /* cache is optional */ }
+  return { entries, cards, index };
 }
+
+export const loadCatalog = (args) => loadAll(args).entries;
 
 export function resolve(catalog, name) {
   const i = name.indexOf(":");
