@@ -37,3 +37,22 @@ After turn `compactAfter` (6) the harness compacts the agent's context where it 
 | Codex | not used | `codex exec` has no compact command; recorded as `unsupported` |
 
 `npm test` runs `node --test test/*.test.js`, so the bench task repos (which start with failing tests) are not picked up.
+
+## Picker eval
+
+Offline eval of the automatic skill picker (BM25 over skill cards plus tool, file, failure and project signals). No model calls.
+
+```
+node bench/picker/freeze.js            # snapshot this machine's skill catalog into cards.json (home dir becomes ~)
+node bench/picker/eval.js              # tune and held-out tables under the shipped THRESHOLDS, plus the stitch-to-frontend case
+node bench/picker/eval.js --tune       # grid-search thresholds on the tune split first (--tune-only hides the held-out row)
+```
+
+`cases.json` holds labeled cases (written independently of the tuning; never edited to fit it). Case `i` is in the tune split if `i % 10 < 7`, else held out. Thresholds and vocabulary (stopwords, stemmer, `EXPAND`, `DEP_WORDS`, `MARKERS`) are tuned on the tune split only; `test/picker-eval.test.js` gates the held-out split against floors set from the first honest run.
+
+Shipped `THRESHOLDS = { hi: 15, lo: 6, margin: 2 }` (2026-10-20):
+
+| split | n | positives | neutral | top1 | hit | falseFire | forbidHits | tokensPerCase | listAllTokens |
+|---|---|---|---|---|---|---|---|---|---|
+| tune | 91 | 70 | 21 | 0.614 | 0.671 | 0.095 | 0 | 78 | 5676 |
+| test | 38 | 30 | 8 | 0.633 | 0.633 | 0.250 | 1 | 86 | 5676 |

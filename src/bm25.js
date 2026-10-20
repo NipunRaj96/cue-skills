@@ -1,9 +1,13 @@
 export const STOPWORDS = new Set(("a an the and or but if of in on at to for from by with as is are was were be been it its this that these those " +
-  "i me my we our you your he she they them do does did can could should would will just please any all some use using used when skill skills user").split(" "));
+  "i me my we our you your he she they them do does did can could should would will just please any all some use using used when skill skills user " +
+  // conversational filler: never names a task
+  "need needs want wants like make makes get gets got let lets pls plz thanks thank think new help how what why who where which not no so up out about into then than there here now one also more very really too only still yes ok okay go going done has have had am each every other another such same both few most many much thing things").split(" "));
 
 const stem = (w) => {
   const m = /^(.{3,})(ing|ed)$/.exec(w);
   if (m) return /([b-df-hj-np-tv-z])\1$/.test(m[1]) && !/(ll|ss|zz)$/.test(m[1]) ? m[1].slice(0, -1) : m[1];
+  if (/^.{2,}(ch|sh|x|z|ss)es$/.test(w)) return w.slice(0, -2);
+  if (/^.{2,}[^aeiou]ies$/.test(w)) return w.slice(0, -3) + "y";
   return !w.endsWith("ss") && w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w;
 };
 

@@ -1,0 +1,1413 @@
+[
+  {
+    "id": "saas-landing-not-generic",
+    "prompt": "need a landing page for our invoicing tool. hero, pricing, faq. pls dont make it look like every other ai site",
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-landing-page"
+    ]
+  },
+  {
+    "id": "portfolio-magazine-feel",
+    "prompt": "redo my personal portfolio, want it calm, like a printed magazine w/ big serif headlines",
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "editorial-minimal"
+    ]
+  },
+  {
+    "id": "cli-product-site-linear-vibe",
+    "prompt": "build the marketing site for our observability CLI. think linear / vercel, mostly black",
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "dark-tech",
+      "taste-landing-page",
+      "brutalist-industrial"
+    ]
+  },
+  {
+    "id": "credit-union-homepage",
+    "prompt": "homepage for a regional credit union. members need to trust it, nothing flashy",
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "corporate-trust",
+      "taste-landing-page"
+    ]
+  },
+  {
+    "id": "kids-coding-camp",
+    "prompt": "landing for a summer coding camp for 10 year olds — loud colours, fun, big chunky buttons",
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "playful-color",
+      "neo-brutalism",
+      "taste-landing-page"
+    ]
+  },
+  {
+    "id": "matcha-shop-zen",
+    "prompt": "site for a tiny matcha shop in kyoto. super calm, lots of empty space",
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "japanese-minimal",
+      "quiet-luxury"
+    ]
+  },
+  {
+    "id": "handbag-lookbook",
+    "prompt": "high end handbag label wants a lookbook site. should feel expensive but understated",
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "quiet-luxury",
+      "editorial-minimal"
+    ]
+  },
+  {
+    "id": "band-tour-poster",
+    "prompt": "page for our band's tour dates, gig poster look, halftone dots, kinda 70s",
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "retro-print"
+    ]
+  },
+  {
+    "id": "declassified-dashboard",
+    "prompt": "make the admin dashboard look like a declassified military terminal. rigid grid, monospace everything",
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "brutalist-industrial",
+      "dark-tech"
+    ]
+  },
+  {
+    "id": "agency-site-award-tier",
+    "prompt": "agency homepage should feel like a site-of-the-day winner. scenes that scrub as you scroll, pinned sections",
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "cinematic-motion",
+      "taste-gsap",
+      "taste-motion"
+    ]
+  },
+  {
+    "id": "scrolltrigger-jump-fonts",
+    "prompt": "the ScrollTrigger pin jumps about 40px once the webfont loads, can you fix",
+    "expect": [
+      "taste-gsap",
+      "taste-motion",
+      "systematic-debugging",
+      "investigate-first",
+      "surgical-patch"
+    ]
+  },
+  {
+    "id": "palette-one-accent",
+    "prompt": "pick colours for the app. one accent, and it has to pass contrast in dark mode too",
+    "expect": [
+      "taste-color",
+      "taste-accessibility",
+      "design-taste",
+      "better-design",
+      "taste-design-system"
+    ]
+  },
+  {
+    "id": "fonts-clash",
+    "prompt": "the headings and body font clash badly. suggest a better pairing + a sane size scale",
+    "expect": [
+      "taste-typography",
+      "design-taste",
+      "better-design"
+    ]
+  },
+  {
+    "id": "screenreader-checkout",
+    "prompt": "can someone using a screen reader actually finish our checkout? check it",
+    "expect": [
+      "taste-accessibility",
+      "taste-design-review",
+      "better-design"
+    ]
+  },
+  {
+    "id": "pebble-wordmark",
+    "prompt": "need a logo for 'Pebble' + the favicon. simple wordmark is fine",
+    "expect": [
+      "taste-brand-identity",
+      "design-taste",
+      "imagegen"
+    ]
+  },
+  {
+    "id": "robot-error-messages",
+    "prompt": "all our error msgs and empty states sound like a robot wrote them, rewrite them",
+    "expect": [
+      "taste-ux-copy"
+    ]
+  },
+  {
+    "id": "token-tiers",
+    "prompt": "set up tokens for the component lib — raw values, then semantic names on top, plus a spacing scale",
+    "expect": [
+      "taste-design-system",
+      "better-design",
+      "taste-color"
+    ]
+  },
+  {
+    "id": "lcp-layout-shift",
+    "prompt": "lighthouse gives the homepage 4.8s LCP and stuff jumps when the hero img loads",
+    "expect": [
+      "taste-web-performance",
+      "investigate-first"
+    ]
+  },
+  {
+    "id": "typewriter-counter",
+    "prompt": "typewriter on the hero headline, then the stats should tick up from zero",
+    "expect": [
+      "animate-text",
+      "taste-motion"
+    ]
+  },
+  {
+    "id": "isometric-hero-art",
+    "prompt": "generate a hero illustration: little isometric city, transparent bg, png",
+    "expect": [
+      "imagegen"
+    ]
+  },
+  {
+    "id": "prod-logout-2min",
+    "prompt": "login works locally but in prod people get kicked out after ~2 min. no clue why",
+    "expect": [
+      "systematic-debugging",
+      "investigate-first"
+    ]
+  },
+  {
+    "id": "flaky-one-in-five",
+    "prompt": "this test passes on its own but fails like 1 in 5 runs in CI",
+    "expect": [
+      "systematic-debugging",
+      "investigate-first"
+    ]
+  },
+  {
+    "id": "pagination-dup-row",
+    "prompt": "off by one in pagination, last page repeats a row. fix it and dont touch anything else",
+    "expect": [
+      "surgical-patch",
+      "systematic-debugging",
+      "test-driven-development"
+    ]
+  },
+  {
+    "id": "slugify-tests-first",
+    "prompt": "add a slugify helper. tests first please",
+    "expect": [
+      "test-driven-development"
+    ]
+  },
+  {
+    "id": "offline-mode-options",
+    "prompt": "thinking about adding offline mode. help me think through the options before we write anything",
+    "expect": [
+      "brainstorming"
+    ]
+  },
+  {
+    "id": "spec-to-steps",
+    "prompt": "spec for the billing revamp is in docs/spec.md. break it down into concrete steps before we start coding",
+    "expect": [
+      "writing-plans"
+    ]
+  },
+  {
+    "id": "plan-inline",
+    "prompt": "plan's in docs/plans/search.md. work through it task by task yourself, no helpers",
+    "expect": [
+      "executing-plans"
+    ]
+  },
+  {
+    "id": "plan-fan-out",
+    "prompt": "run the plan in plan.md but hand each task to a fresh subagent",
+    "expect": [
+      "subagent-driven-development",
+      "dispatching-parallel-agents"
+    ]
+  },
+  {
+    "id": "three-unrelated-bugs",
+    "prompt": "three unrelated bugs: csv export, avatar upload, and the timezone thing. do them all at once",
+    "expect": [
+      "dispatching-parallel-agents",
+      "systematic-debugging"
+    ]
+  },
+  {
+    "id": "payments-isolated-tree",
+    "prompt": "start the payments feature somewhere isolated, I still need main checked out here",
+    "expect": [
+      "using-git-worktrees"
+    ]
+  },
+  {
+    "id": "land-this-branch",
+    "prompt": "everything's done and green. how do we land this, merge or PR?",
+    "expect": [
+      "finishing-a-development-branch",
+      "verification-before-completion"
+    ]
+  },
+  {
+    "id": "staged-commit-msg",
+    "prompt": "write the commit msg for what's staged",
+    "expect": [
+      "caveman-commit"
+    ]
+  },
+  {
+    "id": "pr-212-before-merge",
+    "prompt": "look over PR #212 before i merge it",
+    "expect": [
+      "requesting-code-review",
+      "caveman-review",
+      "taste-code-review",
+      "review-agent"
+    ]
+  },
+  {
+    "id": "fourteen-comments",
+    "prompt": "reviewer left 14 comments on my PR and some look wrong to me. go through them",
+    "expect": [
+      "receiving-code-review"
+    ]
+  },
+  {
+    "id": "service-layer-overkill",
+    "prompt": "is this service layer overkill? feels like a lot of interfaces for one impl",
+    "expect": [
+      "ponytail-review",
+      "ponytail-audit"
+    ]
+  },
+  {
+    "id": "bloated-repo",
+    "prompt": "what can I rip out of this repo? whole thing feels bloated",
+    "expect": [
+      "ponytail-audit"
+    ]
+  },
+  {
+    "id": "deferred-shortcuts",
+    "prompt": "list all the corners we cut and said we'd come back to",
+    "expect": [
+      "ponytail-debt"
+    ]
+  },
+  {
+    "id": "prove-its-fixed",
+    "prompt": "you said it's fixed. prove it, run the checks",
+    "expect": [
+      "verification-before-completion",
+      "verify-and-stop"
+    ]
+  },
+  {
+    "id": "extract-date-parsing",
+    "prompt": "pull the date parsing out of OrderService into its own module, behaviour has to stay identical",
+    "expect": [
+      "safe-refactor"
+    ]
+  },
+  {
+    "id": "moment-to-datefns",
+    "prompt": "get us off moment onto date-fns, needs a way back if it goes wrong",
+    "expect": [
+      "migration"
+    ]
+  },
+  {
+    "id": "csv-export-no-gold",
+    "prompt": "add csv export on the reports page. only that. don't gold plate",
+    "expect": [
+      "lean-build"
+    ]
+  },
+  {
+    "id": "deploy-checklist-skill",
+    "prompt": "i want the agent to always follow our deploy checklist, can we package that as a skill",
+    "expect": [
+      "writing-skills",
+      "skill-creator"
+    ]
+  },
+  {
+    "id": "skill-never-fires",
+    "prompt": "my skill never triggers. tune the description and run some evals on it",
+    "expect": [
+      "skill-creator",
+      "writing-skills"
+    ]
+  },
+  {
+    "id": "install-skill-from-gh",
+    "prompt": "grab the playwright skill from that github repo and install it",
+    "expect": [
+      "skill-installer"
+    ]
+  },
+  {
+    "id": "codex-plugin-scaffold",
+    "prompt": "scaffold a codex plugin for our team tools with the manifest and a marketplace entry",
+    "expect": [
+      "plugin-creator"
+    ]
+  },
+  {
+    "id": "banking-app-endpoints",
+    "prompt": "pull apart this banking app's apk and tell me which servers it calls",
+    "expect": [
+      "android-reverse-engineering"
+    ]
+  },
+  {
+    "id": "obfuscated-jar-trace",
+    "prompt": "decompile this obfuscated jar and trace from the login button to the network call",
+    "expect": [
+      "android-reverse-engineering"
+    ]
+  },
+  {
+    "id": "docs-plus-code-graph",
+    "prompt": "turn the docs folder + the codebase into a graph so i can see how stuff clusters",
+    "expect": [
+      "graphify"
+    ]
+  },
+  {
+    "id": "openai-cheap-classifier",
+    "prompt": "which gpt model is cheapest for simple classification right now? want the official docs",
+    "expect": [
+      "openai-docs"
+    ]
+  },
+  {
+    "id": "auth0-google-mfa",
+    "prompt": "add google sign-in plus MFA to the next app via auth0",
+    "expect": [
+      "auth0"
+    ]
+  },
+  {
+    "id": "session-token-burn",
+    "prompt": "how many tokens has this session burned so far?",
+    "expect": [
+      "caveman-stats"
+    ]
+  },
+  {
+    "id": "shrink-claude-md",
+    "prompt": "CLAUDE.md is huge and eats context every turn, squash it down",
+    "expect": [
+      "caveman-compress",
+      "caveman-learn"
+    ]
+  },
+  {
+    "id": "llm-spend-per-request",
+    "prompt": "hook this repo up so every llm request gets measured, don't change behaviour",
+    "expect": [
+      "caveman-setup"
+    ]
+  },
+  {
+    "id": "where-llm-money-goes",
+    "prompt": "where is our llm spend actually going? what did caveman find",
+    "expect": [
+      "caveman-evidence-review"
+    ]
+  },
+  {
+    "id": "session-redid-work",
+    "prompt": "why did the last session take 40 min and redo the same task three times??",
+    "expect": [
+      "diagnosing-superpowers"
+    ]
+  },
+  {
+    "id": "cold-start-auth-where",
+    "prompt": "new to this repo. where does request auth actually happen? no idea where to start looking",
+    "expect": [
+      "caveman-explore",
+      "cavecrew"
+    ]
+  },
+  {
+    "id": "rollback-experiment",
+    "prompt": "roll back the caveman experiment we promoted yesterday",
+    "expect": [
+      "caveman-manage"
+    ]
+  },
+  {
+    "id": "stitch-to-frontend",
+    "prompt": "Replicate the Stitch design for the dashboard screen in our React app",
+    "events": [
+      {
+        "tool": "mcp__stitch__get_screen"
+      },
+      {
+        "tool": "Edit",
+        "file": "src/components/Dashboard.tsx"
+      }
+    ],
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ]
+    },
+    "expect": [
+      "frontend-design",
+      "design-taste"
+    ],
+    "forbid": [
+      "caveman",
+      "ponytail"
+    ]
+  },
+  {
+    "id": "read-apk-whats-inside",
+    "prompt": "what's in here",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "Downloads/rides-4.2.1.apk"
+      }
+    ],
+    "expect": [
+      "android-reverse-engineering"
+    ]
+  },
+  {
+    "id": "edit-globals-css",
+    "prompt": "less generic pls",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/styles/globals.css"
+      }
+    ],
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-code-craft"
+    ]
+  },
+  {
+    "id": "edit-hero-tsx",
+    "prompt": "",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "src/components/Hero.tsx"
+      },
+      {
+        "tool": "Edit",
+        "file": "src/components/Hero.tsx"
+      }
+    ],
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-landing-page"
+    ]
+  },
+  {
+    "id": "playwright-screenshot-thoughts",
+    "prompt": "thoughts?",
+    "events": [
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_navigate"
+      },
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_take_screenshot"
+      }
+    ],
+    "expect": [
+      "taste-design-review",
+      "better-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "stitch-generate-onboarding",
+    "prompt": "onboarding, 3 screens",
+    "events": [
+      {
+        "tool": "mcp__stitch__generate_screen_from_text"
+      }
+    ],
+    "expect": [
+      "frontend-design",
+      "design-taste",
+      "better-design"
+    ]
+  },
+  {
+    "id": "write-tokens-json",
+    "prompt": "",
+    "events": [
+      {
+        "tool": "Write",
+        "file": "design/tokens.json"
+      }
+    ],
+    "expect": [
+      "taste-design-system"
+    ]
+  },
+  {
+    "id": "gsap-hero-janky",
+    "prompt": "pin is janky",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/animations/gsap-hero.ts"
+      }
+    ],
+    "expect": [
+      "taste-gsap",
+      "taste-motion",
+      "systematic-debugging"
+    ]
+  },
+  {
+    "id": "write-skill-md",
+    "prompt": "",
+    "events": [
+      {
+        "tool": "Write",
+        "file": ".claude/skills/release/SKILL.md"
+      }
+    ],
+    "expect": [
+      "writing-skills",
+      "skill-creator"
+    ]
+  },
+  {
+    "id": "write-codex-manifest",
+    "prompt": "",
+    "events": [
+      {
+        "tool": "Write",
+        "file": "team-tools/.codex-plugin/plugin.json"
+      }
+    ],
+    "expect": [
+      "plugin-creator"
+    ]
+  },
+  {
+    "id": "edit-sql-migration",
+    "prompt": "",
+    "events": [
+      {
+        "tool": "Write",
+        "file": "db/migrations/20261020_add_org_id.sql"
+      }
+    ],
+    "expect": [
+      "migration"
+    ]
+  },
+  {
+    "id": "graphify-out-refresh",
+    "prompt": "update it with the new stuff",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "graphify-out/graph.json"
+      }
+    ],
+    "expect": [
+      "graphify"
+    ]
+  },
+  {
+    "id": "edit-favicon-svg",
+    "prompt": "",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "public/favicon.svg"
+      }
+    ],
+    "expect": [
+      "taste-brand-identity"
+    ]
+  },
+  {
+    "id": "edit-en-json-wording",
+    "prompt": "tighten the wording",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/i18n/en.json"
+      }
+    ],
+    "expect": [
+      "taste-ux-copy"
+    ]
+  },
+  {
+    "id": "read-hero-png-variant",
+    "prompt": "same but transparent",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "assets/hero.png"
+      }
+    ],
+    "expect": [
+      "imagegen"
+    ]
+  },
+  {
+    "id": "edit-auth0-lib",
+    "prompt": "add the org param",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/lib/auth0.ts"
+      }
+    ],
+    "expect": [
+      "auth0"
+    ]
+  },
+  {
+    "id": "read-plan-go",
+    "prompt": "go",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "docs/plans/2026-10-20-checkout.md"
+      }
+    ],
+    "expect": [
+      "executing-plans",
+      "subagent-driven-development"
+    ]
+  },
+  {
+    "id": "theme-css-muddy",
+    "prompt": "dark mode looks muddy",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/styles/theme.css"
+      }
+    ],
+    "expect": [
+      "taste-color",
+      "dark-tech",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "playwright-keyboard-tab",
+    "prompt": "tab thru the form and see what happens",
+    "events": [
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_navigate"
+      },
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_press_key"
+      }
+    ],
+    "expect": [
+      "taste-accessibility"
+    ]
+  },
+  {
+    "id": "edit-claude-md-too-long",
+    "prompt": "too long",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "CLAUDE.md"
+      }
+    ],
+    "expect": [
+      "caveman-compress",
+      "caveman-learn"
+    ]
+  },
+  {
+    "id": "read-decompiled-retrofit",
+    "prompt": "keep going",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "out/sources/com/acme/net/ApiService.java"
+      },
+      {
+        "tool": "Read",
+        "file": "out/resources/AndroidManifest.xml"
+      }
+    ],
+    "expect": [
+      "android-reverse-engineering"
+    ]
+  },
+  {
+    "id": "fail-empty",
+    "prompt": "",
+    "events": [
+      {
+        "tool": "Bash",
+        "failure": true
+      }
+    ],
+    "expect": [
+      "systematic-debugging",
+      "investigate-first"
+    ]
+  },
+  {
+    "id": "fail-hm-after-edit",
+    "prompt": "hm",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/cart.ts"
+      },
+      {
+        "tool": "Bash",
+        "failure": true
+      }
+    ],
+    "expect": [
+      "systematic-debugging",
+      "investigate-first",
+      "surgical-patch"
+    ]
+  },
+  {
+    "id": "fail-still-red",
+    "prompt": "still red",
+    "events": [
+      {
+        "tool": "Bash",
+        "failure": true
+      },
+      {
+        "tool": "Edit",
+        "file": "src/parse.ts"
+      },
+      {
+        "tool": "Bash",
+        "failure": true
+      }
+    ],
+    "expect": [
+      "systematic-debugging",
+      "investigate-first"
+    ]
+  },
+  {
+    "id": "fail-ugh-pytest",
+    "prompt": "ugh",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "tests/test_parser.py"
+      },
+      {
+        "tool": "Bash",
+        "failure": true
+      }
+    ],
+    "expect": [
+      "systematic-debugging",
+      "investigate-first"
+    ]
+  },
+  {
+    "id": "fail-vitest-project",
+    "prompt": "",
+    "events": [
+      {
+        "tool": "Bash",
+        "failure": true
+      }
+    ],
+    "project": {
+      "deps": [
+        "vitest",
+        "typescript"
+      ]
+    },
+    "expect": [
+      "systematic-debugging",
+      "investigate-first"
+    ]
+  },
+  {
+    "id": "fail-after-merge",
+    "prompt": "broke after the merge",
+    "events": [
+      {
+        "tool": "Bash",
+        "failure": true
+      }
+    ],
+    "expect": [
+      "systematic-debugging",
+      "investigate-first"
+    ]
+  },
+  {
+    "id": "fail-ship-it",
+    "prompt": "done, ship it",
+    "events": [
+      {
+        "tool": "Bash",
+        "failure": true
+      }
+    ],
+    "forbid": [
+      "finishing-a-development-branch"
+    ],
+    "expect": [
+      "verification-before-completion",
+      "systematic-debugging"
+    ]
+  },
+  {
+    "id": "proj-auth0-next-login",
+    "prompt": "set up the login stuff",
+    "project": {
+      "deps": [
+        "next",
+        "@auth0/nextjs-auth0"
+      ]
+    },
+    "expect": [
+      "auth0"
+    ]
+  },
+  {
+    "id": "proj-express-jwt-roles",
+    "prompt": "add the role check on the admin endpoints",
+    "project": {
+      "deps": [
+        "express",
+        "express-oauth2-jwt-bearer"
+      ]
+    },
+    "expect": [
+      "auth0"
+    ]
+  },
+  {
+    "id": "proj-gsap-about",
+    "prompt": "add the scroll stuff to the about section",
+    "project": {
+      "deps": [
+        "react",
+        "gsap"
+      ]
+    },
+    "expect": [
+      "taste-gsap",
+      "taste-motion"
+    ]
+  },
+  {
+    "id": "proj-gsap-lenis-scrub",
+    "prompt": "fix the scrub",
+    "project": {
+      "deps": [
+        "gsap",
+        "lenis"
+      ]
+    },
+    "expect": [
+      "taste-gsap",
+      "systematic-debugging",
+      "investigate-first"
+    ]
+  },
+  {
+    "id": "proj-framer-intro",
+    "prompt": "animate the intro",
+    "project": {
+      "deps": [
+        "react",
+        "framer-motion"
+      ]
+    },
+    "expect": [
+      "taste-motion",
+      "animate-text"
+    ]
+  },
+  {
+    "id": "proj-decompiled-tree",
+    "prompt": "figure out how this talks to its backend",
+    "project": {
+      "markers": [
+        "AndroidManifest.xml",
+        "classes.dex",
+        "resources.arsc"
+      ]
+    },
+    "expect": [
+      "android-reverse-engineering"
+    ]
+  },
+  {
+    "id": "proj-openai-model",
+    "prompt": "which model should we be on now?",
+    "project": {
+      "deps": [
+        "openai"
+      ]
+    },
+    "expect": [
+      "openai-docs"
+    ]
+  },
+  {
+    "id": "proj-plan-md",
+    "prompt": "lets keep going on it",
+    "project": {
+      "markers": [
+        "PLAN.md"
+      ]
+    },
+    "expect": [
+      "executing-plans",
+      "subagent-driven-development"
+    ]
+  },
+  {
+    "id": "proj-skill-repo",
+    "prompt": "add another one for the release steps",
+    "project": {
+      "markers": [
+        "SKILL.md"
+      ]
+    },
+    "expect": [
+      "writing-skills",
+      "skill-creator"
+    ]
+  },
+  {
+    "id": "proj-codex-plugin",
+    "prompt": "add one for the sync command",
+    "project": {
+      "markers": [
+        ".codex-plugin/plugin.json"
+      ]
+    },
+    "expect": [
+      "plugin-creator"
+    ]
+  },
+  {
+    "id": "proj-expo-look-right",
+    "prompt": "make it look right",
+    "project": {
+      "deps": [
+        "react-native",
+        "expo"
+      ]
+    },
+    "expect": [
+      "better-design",
+      "frontend-design"
+    ]
+  },
+  {
+    "id": "proj-three-hero",
+    "prompt": "do the hero",
+    "project": {
+      "deps": [
+        "three",
+        "@react-three/fiber"
+      ]
+    },
+    "expect": [
+      "better-design",
+      "frontend-design",
+      "design-taste",
+      "taste-landing-page"
+    ]
+  },
+  {
+    "id": "proj-graphify-out",
+    "prompt": "refresh it with whatever changed",
+    "project": {
+      "markers": [
+        "graphify-out/graph.json"
+      ]
+    },
+    "expect": [
+      "graphify"
+    ]
+  },
+  {
+    "id": "proj-shopify-product-page",
+    "prompt": "product page needs work",
+    "project": {
+      "markers": [
+        "layout/theme.liquid",
+        "config/settings_schema.json"
+      ]
+    },
+    "expect": [
+      "better-design",
+      "frontend-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "proj-anthropic-spend",
+    "prompt": "we're spending too much, break it down per feature",
+    "project": {
+      "deps": [
+        "@anthropic-ai/sdk"
+      ]
+    },
+    "expect": [
+      "caveman-discover",
+      "caveman-setup",
+      "caveman-evidence-review"
+    ]
+  },
+  {
+    "id": "n-rename-var-rt",
+    "prompt": "rename `usr` to `user` in this file",
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ]
+    },
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-design-review"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-format-price-null",
+    "prompt": "what does formatPrice return when amount is null?",
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ]
+    },
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-design-review"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-bump-version-rt",
+    "prompt": "bump the version to 1.2.0",
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ]
+    },
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-design-review"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-dev-server-rt",
+    "prompt": "run the dev server",
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ]
+    },
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-design-review"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-readme-typo-rt",
+    "prompt": "typo in the README, 'recieve'",
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ]
+    },
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-design-review"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-eslint-unused-rt",
+    "prompt": "add an eslint rule for unused imports",
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ]
+    },
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-design-review"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-rename-prop-button",
+    "prompt": "rename the onClick prop to onPress",
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ]
+    },
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/components/Button.tsx"
+      }
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-design-review"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-testid-submit",
+    "prompt": "add a data-testid to the submit button",
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ]
+    },
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/components/SignupForm.tsx"
+      }
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "better-design",
+      "taste-design-review"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-thanks",
+    "prompt": "thanks",
+    "expect": []
+  },
+  {
+    "id": "n-run-ls",
+    "prompt": "run ls",
+    "expect": []
+  },
+  {
+    "id": "n-let-vs-const",
+    "prompt": "whats the difference between let and const",
+    "expect": []
+  },
+  {
+    "id": "n-explain-regex",
+    "prompt": "explain this regex: ^\\d{3}-\\d{4}$",
+    "expect": []
+  },
+  {
+    "id": "n-git-status",
+    "prompt": "git status",
+    "forbid": [
+      "caveman-commit",
+      "finishing-a-development-branch"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-delete-logs",
+    "prompt": "delete the old logs folder",
+    "expect": []
+  },
+  {
+    "id": "n-nvmrc-22",
+    "prompt": "set .nvmrc to 22",
+    "expect": []
+  },
+  {
+    "id": "n-line-count",
+    "prompt": "how many lines is server.js",
+    "expect": []
+  },
+  {
+    "id": "n-ok",
+    "prompt": "ok",
+    "expect": []
+  },
+  {
+    "id": "n-continue",
+    "prompt": "continue",
+    "expect": []
+  },
+  {
+    "id": "n-gitignore-env",
+    "prompt": "add .env.local to gitignore",
+    "expect": []
+  },
+  {
+    "id": "n-last-commits",
+    "prompt": "show me the last 5 commits",
+    "forbid": [
+      "caveman-commit"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-port-4000",
+    "prompt": "change the port from 3000 to 4000",
+    "expect": []
+  },
+  {
+    "id": "n-pkg-scripts",
+    "prompt": "what scripts are in package.json",
+    "expect": []
+  },
+  {
+    "id": "n-install-deps",
+    "prompt": "install deps",
+    "expect": []
+  },
+  {
+    "id": "n-yes-do-that",
+    "prompt": "yes do that",
+    "expect": []
+  },
+  {
+    "id": "n-todo-comment",
+    "prompt": "put a TODO above the retry loop",
+    "expect": []
+  },
+  {
+    "id": "n-pdf-merge-uncovered",
+    "prompt": "merge these two invoices into one file",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "invoices/invoice-1.pdf"
+      },
+      {
+        "tool": "Read",
+        "file": "invoices/invoice-2.pdf"
+      }
+    ],
+    "forbid": [
+      "graphify",
+      "imagegen"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-xlsx-totals-uncovered",
+    "prompt": "add a totals row at the bottom",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "reports/Q3.xlsx"
+      }
+    ],
+    "forbid": [
+      "graphify"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-anthropic-caching-uncovered",
+    "prompt": "turn on prompt caching for our claude calls",
+    "project": {
+      "deps": [
+        "@anthropic-ai/sdk"
+      ]
+    },
+    "forbid": [
+      "openai-docs",
+      "caveman-setup"
+    ],
+    "expect": []
+  },
+  {
+    "id": "n-remember-pnpm",
+    "prompt": "remember that I use pnpm, not npm",
+    "forbid": [
+      "caveman-compress"
+    ],
+    "expect": []
+  }
+]

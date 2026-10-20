@@ -3,8 +3,8 @@ import { renderFull } from "./render.js";
 import { readChecked } from "./safefile.js";
 import { MAX_SKILL } from "./catalog.js";
 
-// placeholder; Task 5 overwrites with tuned values
-export const THRESHOLDS = { hi: 6, lo: 3, margin: 1.5 };
+// Tuned 2026-10-20 on the tune split only (bench/picker, grid in eval.js): top1 0.614, hit 0.671, falseFire 0.095, forbidHits 0.
+export const THRESHOLDS = { hi: 15, lo: 6, margin: 2 };
 export const CAP_TOKENS = 2000, BODY_MAX_TOKENS = 1500, SHORTLIST_MAX = 3;
 export const SHORTLIST_HEADER = "Relevant skills; read the file of the one that fits.";
 

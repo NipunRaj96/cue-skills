@@ -25,7 +25,7 @@ test("testFailure needs a runner, failure output, and no zero exit", () => {
   assert.equal(testFailure({ command: "pytest", output: "all good", exitCode: 1 }), false);
 });
 test("summarize maps deps and markers, never raw names", () => {
-  assert.equal(summarize({ deps: ["react", "tailwindcss", "left-pad"], markers: ["tsconfig.json"] }), "frontend ui css design typescript");
+  assert.equal(summarize({ deps: ["react", "tailwindcss", "left-pad"], markers: ["tsconfig.json"] }), "frontend ui typescript");
 });
 test("projectSummary reads package.json safely", () => {
   const { h, cwd } = fixture();
