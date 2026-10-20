@@ -20,13 +20,20 @@ export function queryTerms(parts) {
   return m;
 }
 
+// BM25F-style: body terms count BODY_W each, the body is capped at BODY_WORDS words (see catalog.bodyText),
+// so a long body cannot swamp length normalisation. tf and len are weighted (fractional).
+export const BODY_W = 0.3;
+
 export function buildIndex(cards) {
   const df = {}, docs = cards.map((c) => {
-    const terms = [...tokenize(c.name), ...tokenize(c.name), ...tokenize(c.name), ...tokenize(c.description), ...tokenize(c.when_to_use)];
     const tf = {};
-    for (const t of terms) tf[t] = (tf[t] ?? 0) + 1;
+    let len = 0;
+    const add = (text, w, reps = 1) => {
+      for (const t of tokenize(text)) { tf[t] = (tf[t] ?? 0) + w * reps; len += w * reps; }
+    };
+    add(c.name, 1, 3); add(c.description, 1); add(c.when_to_use, 1); add(c.body, BODY_W);
     for (const t in tf) df[t] = (df[t] ?? 0) + 1;
-    return { len: terms.length, tf };
+    return { len, tf };
   });
   const N = docs.length;
   return { N, avgdl: N ? docs.reduce((s, d) => s + d.len, 0) / N : 0, df, docs };

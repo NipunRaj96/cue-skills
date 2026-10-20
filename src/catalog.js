@@ -32,6 +32,11 @@ function cmpVer(a, b) {
   return 0;
 }
 
+export const BODY_WORDS = 3000;
+// body for the picker index: no frontmatter (parseSkill already removed it), no fenced code, first BODY_WORDS words
+export const bodyText = (body) =>
+  String(body ?? "").replace(/^[ \t]*(```|~~~)[\s\S]*?(^[ \t]*\1[^\n]*$|(?![\s\S]))/gm, " ").split(/\s+/).filter(Boolean).slice(0, BODY_WORDS).join(" ");
+
 const inside = (p, base) => p === base || p.startsWith(base + sep);
 
 export function scanRoots({ cwd, rules = {} }) {
@@ -90,6 +95,7 @@ export function buildCatalog(roots) {
           description: String(meta.description ?? ""),
           when_to_use: String(meta.when_to_use ?? meta["when-to-use"] ?? [meta.triggers ?? meta.trigger ?? []].flat().join(", ")),
           tokens: Math.ceil(body.length / 4),
+          body: bodyText(body),
           invocable_only: meta["disable-model-invocation"] === true,
           version: version ?? null,
           path, size: Buffer.byteLength(text), kind, base: kind === "project" ? r.base : null,
@@ -106,10 +112,12 @@ export function loadAll({ cwd, rules }) {
   const file = join(cueDir(), "catalog.json");
   try {
     const c = readJson(file, null);
-    if (c && c.v === 2 && c.key === key) return { entries: c.entries, cards: c.cards, index: c.index };
+    if (c && c.v === 3 && c.key === key) return { entries: c.entries, cards: c.cards, index: c.index };
   } catch { /* corrupt cache: rebuild */ }
-  const entries = buildCatalog(roots), cards = collapse(entries), index = buildIndex(cards);
-  try { ensureCueDir(); writeJson(file, { v: 2, key, entries, cards, index }, 0o600); } catch { /* cache is optional */ }
+  const full = buildCatalog(roots), index = buildIndex(collapse(full));
+  // bodies feed the index only; the cache and callers never carry them
+  const entries = full.map(({ body, ...e }) => e), cards = collapse(entries);
+  try { ensureCueDir(); writeJson(file, { v: 3, key, entries, cards, index }, 0o600); } catch { /* cache is optional */ }
   return { entries, cards, index };
 }
 

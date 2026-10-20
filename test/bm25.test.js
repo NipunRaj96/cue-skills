@@ -41,5 +41,27 @@ test("catalog cache from v0.1 is rebuilt", () => {
   assert.equal(all.cards[0].tokens > 0, true);
   assert.equal(all.index.N, 1);
   assert.equal(loadCatalog({ cwd, rules }).length, 1);
-  assert.equal(JSON.parse(readFileSync(join(h, ".cue/catalog.json"), "utf8")).v, 2);
+  assert.equal(JSON.parse(readFileSync(join(h, ".cue/catalog.json"), "utf8")).v, 3);
+});
+test("body terms count, weakly, and code fences and frontmatter are not indexed", () => {
+  const B = [
+    { name: "a", description: "alpha", when_to_use: "", body: "Use zebra stripes. ```js\nconst quokka = 1;\n``` after" },
+    { name: "b", description: "beta", when_to_use: "", body: "" },
+  ];
+  const ix = buildIndex(B);
+  assert.deepEqual(score(ix, queryTerms([{ text: "zebra" }])).map((x) => x.i), [0]);
+  assert.deepEqual(score(ix, queryTerms([{ text: "alpha" }])).map((x) => x.i), [0]);
+});
+test("bodyText strips fences and caps words", async () => {
+  const { bodyText, BODY_WORDS } = await import("../src/catalog.js");
+  assert.equal(bodyText("keep\n```\nsecret\n```\nthis\n~~~\nopen fence runs to end"), "keep this");
+  assert.equal(bodyText("w ".repeat(BODY_WORDS + 50)).split(" ").length, BODY_WORDS);
+});
+test("a skill body is indexed but not cached on cards", () => {
+  const { h, cwd } = fixture();
+  skill(join(h, ".claude/skills/a"), "a", "wombat habitat notes");
+  skill(join(h, ".claude/skills/b"), "b", "nothing");
+  const all = loadAll({ cwd, rules: loadRules(cwd) });
+  assert.equal(all.cards[0].body, undefined);
+  assert.equal(score(all.index, queryTerms([{ text: "wombat" }])).map((x) => all.cards[x.i].name).join(), "a");
 });
