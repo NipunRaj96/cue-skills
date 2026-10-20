@@ -106,7 +106,8 @@
       "better-design",
       "cinematic-motion",
       "taste-gsap",
-      "taste-motion"
+      "taste-motion",
+      "taste-landing-page"
     ]
   },
   {
@@ -492,7 +493,8 @@
     },
     "expect": [
       "frontend-design",
-      "design-taste"
+      "design-taste",
+      "better-design"
     ],
     "forbid": [
       "caveman",
@@ -589,7 +591,8 @@
       }
     ],
     "expect": [
-      "taste-design-system"
+      "taste-design-system",
+      "better-design"
     ]
   },
   {
@@ -604,7 +607,8 @@
     "expect": [
       "taste-gsap",
       "taste-motion",
-      "systematic-debugging"
+      "systematic-debugging",
+      "investigate-first"
     ]
   },
   {
@@ -738,7 +742,8 @@
     "expect": [
       "taste-color",
       "dark-tech",
-      "design-taste"
+      "design-taste",
+      "better-design"
     ]
   },
   {
@@ -753,7 +758,9 @@
       }
     ],
     "expect": [
-      "taste-accessibility"
+      "taste-accessibility",
+      "better-design",
+      "taste-design-review"
     ]
   },
   {
@@ -839,7 +846,8 @@
     ],
     "expect": [
       "systematic-debugging",
-      "investigate-first"
+      "investigate-first",
+      "surgical-patch"
     ]
   },
   {
@@ -908,7 +916,9 @@
     ],
     "expect": [
       "verification-before-completion",
-      "systematic-debugging"
+      "systematic-debugging",
+      "verify-and-stop",
+      "investigate-first"
     ]
   },
   {
@@ -963,7 +973,9 @@
     "expect": [
       "taste-gsap",
       "systematic-debugging",
-      "investigate-first"
+      "investigate-first",
+      "taste-motion",
+      "surgical-patch"
     ]
   },
   {
@@ -1098,7 +1110,8 @@
     "expect": [
       "better-design",
       "frontend-design",
-      "design-taste"
+      "design-taste",
+      "taste-design-review"
     ]
   },
   {

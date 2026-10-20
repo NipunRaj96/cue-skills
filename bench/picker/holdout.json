@@ -1,0 +1,1272 @@
+[
+  {
+    "id": "h-p-devtool-landing-dark",
+    "prompt": "need a landing pg for our cli tool. dark, kinda linear/vercel vibe. hero, features grid, pricing, faq",
+    "project": {
+      "deps": [
+        "next",
+        "react",
+        "tailwindcss"
+      ],
+      "markers": [
+        "next.config.js"
+      ]
+    },
+    "expect": [
+      "frontend-design",
+      "better-design",
+      "design-taste",
+      "dark-tech",
+      "taste-landing-page",
+      "brainstorming"
+    ],
+    "forbid": [
+      "auth0",
+      "android-reverse-engineering",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-p-wordmark-favicon",
+    "prompt": "can u come up w a logo + favicon for 'tidepool'? simple wordmark, needs to work tiny in the tab too",
+    "expect": [
+      "taste-brand-identity"
+    ],
+    "forbid": [
+      "auth0",
+      "migration",
+      "systematic-debugging"
+    ]
+  },
+  {
+    "id": "h-p-palette-contrast-dark",
+    "prompt": "our grays are mush in dark mode and half the text fails contrast. redo the palette for the dashboard",
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ],
+      "markers": [
+        "tailwind.config.ts"
+      ]
+    },
+    "expect": [
+      "taste-color",
+      "taste-accessibility",
+      "better-design"
+    ],
+    "forbid": [
+      "auth0",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-p-modal-screenreader",
+    "prompt": "voiceover doesnt read the modal title and you can tab right out of it behind the overlay. fix pls",
+    "project": {
+      "deps": [
+        "react",
+        "@radix-ui/react-dialog"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "taste-accessibility",
+      "better-design"
+    ],
+    "forbid": [
+      "auth0",
+      "migration",
+      "taste-brand-identity"
+    ]
+  },
+  {
+    "id": "h-p-auth0-rbac-admin",
+    "prompt": "set up auth0 universal login and lock the /admin api down so only users w the admin role get through",
+    "expect": [
+      "auth0"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "android-reverse-engineering"
+    ]
+  },
+  {
+    "id": "h-p-checkout-job-hangs",
+    "prompt": "checkout worker just hangs like 1 run in 10, no error, nothing in logs. no clue whats going on",
+    "expect": [
+      "investigate-first",
+      "systematic-debugging"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "caveman-commit"
+    ]
+  },
+  {
+    "id": "h-p-split-utils",
+    "prompt": "utils.ts is 2k lines. break it into sensible modules, behaviour must stay identical",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "src/lib/utils.ts"
+      }
+    ],
+    "expect": [
+      "safe-refactor"
+    ],
+    "forbid": [
+      "frontend-design",
+      "migration",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-p-rename-column-no-downtime",
+    "prompt": "gotta rename users.fullname -> display_name in pg w/o downtime, old app version still reads it for a while",
+    "expect": [
+      "migration"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-p-moment-to-datefns",
+    "prompt": "rip out moment and switch everything to date-fns, needs to be easy to back out if something breaks",
+    "project": {
+      "deps": [
+        "moment",
+        "react",
+        "express"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "migration",
+      "safe-refactor"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-p-commit-msg",
+    "prompt": "write me a commit msg for whats staged",
+    "events": [
+      {
+        "tool": "Bash"
+      }
+    ],
+    "expect": [
+      "caveman-commit"
+    ],
+    "forbid": [
+      "frontend-design",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-p-review-before-push",
+    "prompt": "look over my diff before i push, anything broken or sketchy?",
+    "expect": [
+      "caveman-review",
+      "taste-code-review",
+      "requesting-code-review",
+      "review-agent"
+    ],
+    "forbid": [
+      "frontend-design",
+      "auth0",
+      "imagegen"
+    ]
+  },
+  {
+    "id": "h-p-too-many-layers",
+    "prompt": "be honest, is this overbuilt? repository + service + manager + factory for a todo api feels insane",
+    "expect": [
+      "ponytail-review"
+    ],
+    "forbid": [
+      "frontend-design",
+      "brainstorming"
+    ]
+  },
+  {
+    "id": "h-p-repo-bloat",
+    "prompt": "go through the whole repo and tell me what i can just delete. deps feel bloated too",
+    "expect": [
+      "ponytail-audit"
+    ],
+    "forbid": [
+      "frontend-design",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-p-spec-to-plan",
+    "prompt": "spec for multi-tenant billing is in docs/billing-spec.md. turn it into a step by step impl plan, dont code yet",
+    "expect": [
+      "writing-plans",
+      "brainstorming"
+    ],
+    "forbid": [
+      "frontend-design",
+      "caveman-commit"
+    ]
+  },
+  {
+    "id": "h-p-three-bugs-at-once",
+    "prompt": "3 unrelated tickets: #212 csv export drops last row, #219 tz offset wrong in emails, #230 avatar upload 413s. knock em out in parallel",
+    "expect": [
+      "dispatching-parallel-agents",
+      "systematic-debugging"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-p-isolated-rewrite",
+    "prompt": "starting the search v2 rewrite, want it isolated so i dont trash my current branch",
+    "expect": [
+      "using-git-worktrees"
+    ],
+    "forbid": [
+      "frontend-design",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-p-pr-feedback",
+    "prompt": "reviewer dropped 14 comments on pr 88, a few look flat out wrong. go thru them w me",
+    "expect": [
+      "receiving-code-review"
+    ],
+    "forbid": [
+      "frontend-design",
+      "caveman-commit"
+    ]
+  },
+  {
+    "id": "h-p-rate-limit-tests-first",
+    "prompt": "add rate limiting on POST /upload. write the tests first then make em pass",
+    "project": {
+      "deps": [
+        "express",
+        "vitest"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "test-driven-development",
+      "lean-build"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-p-release-checklist-skill",
+    "prompt": "turn our release checklist into a skill the agent can follow",
+    "expect": [
+      "skill-creator",
+      "writing-skills"
+    ],
+    "forbid": [
+      "frontend-design",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-p-openai-model-choice",
+    "prompt": "cheapest openai model thats decent at classifying support tickets? and is responses api the thing now or chat completions",
+    "expect": [
+      "openai-docs"
+    ],
+    "forbid": [
+      "frontend-design",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-p-apk-endpoints",
+    "prompt": "theres a vendor app in ~/Downloads/fleet.xapk, need every backend endpoint it hits",
+    "expect": [
+      "android-reverse-engineering"
+    ],
+    "forbid": [
+      "frontend-design",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-p-agent-token-burn",
+    "prompt": "my agent eats a ton of tokens every run, claude.md is like 600 lines. slim it down",
+    "expect": [
+      "caveman-learn",
+      "caveman-compress"
+    ],
+    "forbid": [
+      "frontend-design",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-p-hero-type-on",
+    "prompt": "hero headline should type itself out, then the '10k devs' number counts up",
+    "project": {
+      "deps": [
+        "react",
+        "framer-motion"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "animate-text",
+      "taste-motion"
+    ],
+    "forbid": [
+      "auth0",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-p-error-copy",
+    "prompt": "our toasts literally say 'Error 500 occurred'. rewrite the errors + empty states on the settings screens so they sound human",
+    "expect": [
+      "taste-ux-copy"
+    ],
+    "forbid": [
+      "auth0",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-p-lcp-cls",
+    "prompt": "lighthouse gives homepage LCP 4.8s and CLS .31, hero img + webfont swap probably. get it green",
+    "project": {
+      "deps": [
+        "next",
+        "react"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "taste-web-performance"
+    ],
+    "forbid": [
+      "auth0",
+      "taste-brand-identity"
+    ]
+  },
+  {
+    "id": "h-p-jewelry-site",
+    "prompt": "site for a small jewelry label. should feel expensive and calm, serif heavy, lots of air",
+    "expect": [
+      "quiet-luxury",
+      "design-taste",
+      "frontend-design",
+      "better-design",
+      "taste-typography"
+    ],
+    "forbid": [
+      "neo-brutalism",
+      "playful-color",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-p-zine-fair",
+    "prompt": "event page for a zine fair. riso look, halftone, slightly off registration, poster type",
+    "expect": [
+      "retro-print",
+      "design-taste",
+      "frontend-design",
+      "better-design"
+    ],
+    "forbid": [
+      "corporate-trust",
+      "quiet-luxury",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-p-loud-waitlist",
+    "prompt": "make the waitlist page LOUD. fat black borders, hard drop shadows, sticker energy",
+    "expect": [
+      "neo-brutalism",
+      "design-taste",
+      "frontend-design",
+      "better-design"
+    ],
+    "forbid": [
+      "quiet-luxury",
+      "corporate-trust",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-p-hero-illustration",
+    "prompt": "need a png hero illo, isometric cozy desk w plants, transparent bg",
+    "expect": [
+      "imagegen"
+    ],
+    "forbid": [
+      "auth0",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-p-rebuild-from-screenshot",
+    "prompt": "here's a shot i liked on dribbble (design/ref-dashboard.png). rebuild it as a react component, as close as you can get",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "design/ref-dashboard.png"
+      }
+    ],
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss",
+        "vite"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "frontend-design",
+      "better-design",
+      "taste-code-craft"
+    ],
+    "forbid": [
+      "imagegen",
+      "auth0",
+      "taste-brand-identity"
+    ]
+  },
+  {
+    "id": "h-p-acceptance-check",
+    "prompt": "before i tell PM the export ticket is done, confirm the acceptance criteria actually pass. dont add anything",
+    "expect": [
+      "verify-and-stop",
+      "verification-before-completion"
+    ],
+    "forbid": [
+      "brainstorming",
+      "lean-build",
+      "frontend-design"
+    ]
+  },
+  {
+    "id": "h-p-paginate-off-by-one",
+    "prompt": "paginate() drops the last item on the final page. smallest fix + a test that would've caught it",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "src/lib/paginate.ts"
+      }
+    ],
+    "expect": [
+      "surgical-patch",
+      "systematic-debugging",
+      "test-driven-development"
+    ],
+    "forbid": [
+      "frontend-design",
+      "safe-refactor",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-p-new-repo-orientation",
+    "prompt": "first day in this codebase. where do stripe webhooks come in and what happens after",
+    "expect": [
+      "caveman-explore",
+      "cavecrew"
+    ],
+    "forbid": [
+      "frontend-design",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-p-design-critique-pricing",
+    "prompt": "roast our pricing page. it converts terribly and i cant tell why",
+    "events": [
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_take_screenshot"
+      }
+    ],
+    "expect": [
+      "taste-design-review",
+      "taste-landing-page",
+      "better-design",
+      "taste-ux-copy"
+    ],
+    "forbid": [
+      "auth0",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-t-stitch-next-screen",
+    "prompt": "ok do the onboarding one next",
+    "events": [
+      {
+        "tool": "mcp__stitch__list_screens"
+      },
+      {
+        "tool": "mcp__stitch__generate_screen_from_text"
+      }
+    ],
+    "expect": [
+      "better-design",
+      "frontend-design"
+    ],
+    "forbid": [
+      "auth0",
+      "migration",
+      "android-reverse-engineering"
+    ]
+  },
+  {
+    "id": "h-t-stitch-to-code",
+    "prompt": "turn that into actual components in the app, match it closely",
+    "events": [
+      {
+        "tool": "mcp__stitch__get_screen"
+      },
+      {
+        "tool": "Write",
+        "file": "src/components/Onboarding/StepCard.tsx"
+      }
+    ],
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss",
+        "vite"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "frontend-design",
+      "better-design",
+      "taste-code-craft"
+    ],
+    "forbid": [
+      "imagegen",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-t-stitch-design-system",
+    "prompt": "use our brand colors + inter for this",
+    "events": [
+      {
+        "tool": "mcp__stitch__list_design_systems"
+      },
+      {
+        "tool": "mcp__stitch__create_design_system"
+      }
+    ],
+    "expect": [
+      "taste-design-system",
+      "better-design",
+      "taste-color",
+      "taste-typography"
+    ],
+    "forbid": [
+      "auth0",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-t-mobile-nav-check",
+    "prompt": "check it on a phone size",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/components/Navbar.tsx"
+      },
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_navigate"
+      },
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_resize"
+      },
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_take_screenshot"
+      }
+    ],
+    "project": {
+      "deps": [
+        "react",
+        "tailwindcss"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "better-design",
+      "taste-design-review"
+    ],
+    "forbid": [
+      "auth0",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-t-sql-migration-file",
+    "prompt": "continue",
+    "events": [
+      {
+        "tool": "Write",
+        "file": "db/migrations/20261020_add_org_id_to_projects.sql"
+      },
+      {
+        "tool": "Bash"
+      }
+    ],
+    "expect": [
+      "migration"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-t-auth0-route",
+    "prompt": "next bit",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "app/api/auth/[auth0]/route.ts"
+      },
+      {
+        "tool": "Edit",
+        "file": "middleware.ts"
+      }
+    ],
+    "expect": [
+      "auth0"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-t-jadx-run",
+    "prompt": "keep digging, find where the login request gets built",
+    "events": [
+      {
+        "tool": "Bash",
+        "file": "out/jadx/sources/com/fleetco/api/AuthService.java"
+      },
+      {
+        "tool": "Read",
+        "file": "out/jadx/sources/com/fleetco/net/RetrofitModule.java"
+      }
+    ],
+    "expect": [
+      "android-reverse-engineering"
+    ],
+    "forbid": [
+      "frontend-design",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-t-gsap-timeline",
+    "prompt": "ease feels off at the end, tweak it",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/lib/gsap/scrollScenes.ts"
+      }
+    ],
+    "expect": [
+      "taste-gsap",
+      "taste-motion"
+    ],
+    "forbid": [
+      "auth0",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-t-playwright-dead-button",
+    "prompt": "save button does nothing when i click it",
+    "events": [
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_click"
+      },
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_console_messages"
+      },
+      {
+        "tool": "mcp__plugin_playwright_playwright__browser_network_requests"
+      }
+    ],
+    "project": {
+      "deps": [
+        "react",
+        "react-hook-form",
+        "tailwindcss"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "systematic-debugging",
+      "investigate-first"
+    ],
+    "forbid": [
+      "design-taste",
+      "neo-brutalism",
+      "taste-brand-identity"
+    ]
+  },
+  {
+    "id": "h-f-tests-red-after-merge",
+    "prompt": "merged main into my branch and now a bunch of tests are red",
+    "events": [
+      {
+        "tool": "Bash",
+        "failure": true
+      }
+    ],
+    "expect": [
+      "systematic-debugging",
+      "investigate-first"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "brainstorming"
+    ]
+  },
+  {
+    "id": "h-f-date-test-loop",
+    "prompt": "run the tests",
+    "events": [
+      {
+        "tool": "Bash",
+        "failure": true
+      },
+      {
+        "tool": "Edit",
+        "file": "src/utils/date.ts"
+      },
+      {
+        "tool": "Bash",
+        "failure": true
+      }
+    ],
+    "project": {
+      "deps": [
+        "vitest",
+        "date-fns"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "systematic-debugging",
+      "surgical-patch"
+    ],
+    "forbid": [
+      "frontend-design",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-f-e2e-sometimes",
+    "prompt": "checkout e2e fails on ci but passes locally most of the time",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "tests/e2e/checkout.spec.ts"
+      },
+      {
+        "tool": "Bash",
+        "file": "tests/e2e/checkout.spec.ts",
+        "failure": true
+      }
+    ],
+    "project": {
+      "deps": [
+        "@playwright/test",
+        "next",
+        "react"
+      ],
+      "markers": [
+        "playwright.config.ts"
+      ]
+    },
+    "expect": [
+      "investigate-first",
+      "systematic-debugging"
+    ],
+    "forbid": [
+      "frontend-design",
+      "taste-design-review",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-s-login-auth0-dep",
+    "prompt": "add login + logout to the app, and only signed in ppl can see /dashboard",
+    "project": {
+      "deps": [
+        "next",
+        "react",
+        "@auth0/nextjs-auth0"
+      ],
+      "markers": [
+        "next.config.mjs"
+      ]
+    },
+    "expect": [
+      "auth0"
+    ],
+    "forbid": [
+      "design-taste",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-s-jwt-role-check",
+    "prompt": "role check on the admin endpoints lets editors through, fix it",
+    "project": {
+      "deps": [
+        "express",
+        "express-oauth2-jwt-bearer"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "auth0",
+      "surgical-patch",
+      "systematic-debugging"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-s-scroll-about-gsap",
+    "prompt": "add some scroll stuff to the about section, pinning or whatever looks good",
+    "project": {
+      "deps": [
+        "gsap",
+        "@gsap/react",
+        "next",
+        "react"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "taste-gsap",
+      "taste-motion",
+      "cinematic-motion"
+    ],
+    "forbid": [
+      "auth0",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-s-expo-settings-screen",
+    "prompt": "add a settings screen w notifications + theme toggle",
+    "project": {
+      "deps": [
+        "expo",
+        "react-native",
+        "expo-router"
+      ],
+      "markers": [
+        "app.json"
+      ]
+    },
+    "expect": [
+      "better-design"
+    ],
+    "forbid": [
+      "auth0",
+      "migration",
+      "taste-gsap"
+    ]
+  },
+  {
+    "id": "h-s-prisma-org-table",
+    "prompt": "we need an orgs table and every project belongs to one. existing projects need backfilling",
+    "project": {
+      "deps": [
+        "prisma",
+        "@prisma/client",
+        "next"
+      ],
+      "markers": [
+        "prisma/schema.prisma"
+      ]
+    },
+    "expect": [
+      "migration"
+    ],
+    "forbid": [
+      "frontend-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-s-three-scene-load",
+    "prompt": "the 3d hero takes forever to show up and stutters on load",
+    "project": {
+      "deps": [
+        "three",
+        "@react-three/fiber",
+        "@react-three/drei",
+        "react"
+      ],
+      "markers": []
+    },
+    "expect": [
+      "taste-web-performance",
+      "better-design",
+      "investigate-first"
+    ],
+    "forbid": [
+      "auth0",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-n-regex-explain",
+    "prompt": "what does ^(?=.*\\d)(?=.*[a-z]).{8,}$ actually match",
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "auth0",
+      "systematic-debugging"
+    ]
+  },
+  {
+    "id": "h-n-log-payload",
+    "prompt": "drop a console.log in fetchUser so i can see what the api sends back",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/api/user.ts"
+      }
+    ],
+    "project": {
+      "deps": [
+        "react",
+        "vite",
+        "tailwindcss"
+      ],
+      "markers": []
+    },
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "better-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-n-nvmrc-bump",
+    "prompt": "bump .nvmrc to 22",
+    "project": {
+      "deps": [
+        "react",
+        "next",
+        "tailwindcss"
+      ],
+      "markers": [
+        ".nvmrc"
+      ]
+    },
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "better-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-n-top-customers-sql",
+    "prompt": "sql for top 10 customers by revenue last month, orders + customers tables",
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-n-git-undo",
+    "prompt": "how do i undo my last commit but keep the changes",
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "finishing-a-development-branch"
+    ]
+  },
+  {
+    "id": "h-n-env-example",
+    "prompt": "add STRIPE_WEBHOOK_SECRET to .env.example",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": ".env.example"
+      }
+    ],
+    "project": {
+      "deps": [
+        "next",
+        "react",
+        "tailwindcss",
+        "stripe"
+      ],
+      "markers": []
+    },
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "better-design",
+      "design-taste",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-n-json-to-yaml",
+    "prompt": "convert fixtures/users.json to yaml pls",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "fixtures/users.json"
+      }
+    ],
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-n-eslint-unused-tests",
+    "prompt": "eslint keeps yelling about unused vars in test files, turn that off just for *.test.ts",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "eslint.config.js"
+      }
+    ],
+    "project": {
+      "deps": [
+        "react",
+        "eslint",
+        "tailwindcss",
+        "typescript"
+      ],
+      "markers": []
+    },
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "better-design",
+      "taste-code-craft"
+    ]
+  },
+  {
+    "id": "h-n-useeffect-cleanup",
+    "prompt": "whats the cleanup fn in this useEffect actually doing? when does it run",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "src/hooks/usePolling.ts"
+      }
+    ],
+    "project": {
+      "deps": [
+        "react",
+        "react-dom"
+      ],
+      "markers": []
+    },
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "better-design",
+      "taste-motion"
+    ]
+  },
+  {
+    "id": "h-n-start-dev",
+    "prompt": "spin up the dev server",
+    "events": [
+      {
+        "tool": "Bash"
+      }
+    ],
+    "project": {
+      "deps": [
+        "vite",
+        "react",
+        "tailwindcss"
+      ],
+      "markers": [
+        "vite.config.ts"
+      ]
+    },
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "better-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-n-ci-npm-test",
+    "prompt": "add a gh action that runs npm test on every pr",
+    "events": [
+      {
+        "tool": "Write",
+        "file": ".github/workflows/test.yml"
+      }
+    ],
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-n-readme-spanish",
+    "prompt": "translate the readme intro into spanish",
+    "events": [
+      {
+        "tool": "Read",
+        "file": "README.md"
+      }
+    ],
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "taste-ux-copy"
+    ]
+  },
+  {
+    "id": "h-n-zod-field",
+    "prompt": "add an optional notes string to the todo zod schema",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/schemas/todo.ts"
+      }
+    ],
+    "project": {
+      "deps": [
+        "express",
+        "zod"
+      ],
+      "markers": []
+    },
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "migration"
+    ]
+  },
+  {
+    "id": "h-n-footer-year",
+    "prompt": "footer still says 2024, make it pull the current year",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "src/components/Footer.tsx"
+      }
+    ],
+    "project": {
+      "deps": [
+        "react",
+        "next",
+        "tailwindcss"
+      ],
+      "markers": []
+    },
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "design-taste",
+      "taste-brand-identity"
+    ]
+  },
+  {
+    "id": "h-n-csv-dedupe",
+    "prompt": "quick python script to dedupe leads.csv by email",
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "auth0"
+    ]
+  },
+  {
+    "id": "h-n-ts-type-vs-interface",
+    "prompt": "type vs interface in ts, when does it matter",
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "brainstorming"
+    ]
+  },
+  {
+    "id": "h-n-path-alias",
+    "prompt": "set up @/ import alias, im sick of ../../../",
+    "events": [
+      {
+        "tool": "Edit",
+        "file": "tsconfig.json"
+      }
+    ],
+    "project": {
+      "deps": [
+        "next",
+        "react",
+        "tailwindcss",
+        "typescript"
+      ],
+      "markers": [
+        "tsconfig.json"
+      ]
+    },
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "better-design",
+      "design-taste"
+    ]
+  },
+  {
+    "id": "h-n-last-commit-files",
+    "prompt": "which files did the last commit touch",
+    "events": [
+      {
+        "tool": "Bash"
+      }
+    ],
+    "expect": [],
+    "forbid": [
+      "frontend-design",
+      "caveman-commit"
+    ]
+  }
+]
