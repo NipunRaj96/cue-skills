@@ -18,12 +18,14 @@ function list(v, where, errors) {
 
 // root set => project file: skillDirs must stay inside it, no ~ or absolute paths
 function readRules(file, text, errors, root) {
-  const out = { always: [], never: [], when: [], skillDirs: [] };
+  const out = { always: [], never: [], when: [], skillDirs: [], picker: true };
   let doc;
   try { doc = parse(text); }
   catch (e) { errors.push(`${file}: ${e.message}`); return out; }
   if (doc == null) return out;
   if (typeof doc !== "object" || Array.isArray(doc)) { errors.push(`${file}: expected a mapping`); return out; }
+  if (doc.picker != null && typeof doc.picker !== "boolean") errors.push(`${file}: picker: expected true or false`);
+  else if (doc.picker === false) out.picker = false;
   for (const k of ["always", "never", "skillDirs"]) out[k] = list(doc[k], `${file}: ${k}`, errors);
   // relative skillDirs resolve against the rules file's directory
   out.skillDirs = out.skillDirs.flatMap((d) => {
@@ -85,5 +87,6 @@ export function loadRules(cwd) {
     always: dedupe([...g.always, ...p.always]), never: dedupe([...g.never, ...pnever]),
     when: [...g.when, ...p.when], skillDirs: dedupe(g.skillDirs), projectSkillDirs: dedupe(p.skillDirs),
     projectNames, projectStatus, errors,
+    picker: g.picker !== false, // global switch only: a repo cannot turn the picker on or off for you
   };
 }

@@ -24,7 +24,13 @@ export function addHooks(file, spec, cmd) {
   data.hooks ||= {};
   for (const { event, matcher, timeout } of spec) {
     const groups = (data.hooks[event] ||= []);
-    if (groups.flatMap(handlers).some(isOurs)) continue;
+    const mine = groups.find((g) => handlers(g).some(isOurs));
+    if (mine) {
+      if (mine.matcher === matcher) continue;
+      // a matcher changed between versions: update our own group in place; if a foreign hook shares it, move ours out instead
+      if (handlers(mine).every(isOurs)) { if (matcher) mine.matcher = matcher; else delete mine.matcher; continue; }
+      mine.hooks = mine.hooks.filter((h) => !isOurs(h));
+    }
     const group = { hooks: [{ type: "command", command: `${cmd} ${event}`, timeout }] };
     if (matcher) group.matcher = matcher;
     groups.push(group);
@@ -67,7 +73,9 @@ export function jsonAdapter({ id, label, status, dir, fileName, spec, map, detec
     handle(event, input) {
       const m = map[event];
       if (!m) return "";
-      const { text, notice } = run({ agent: id, session: input.session_id, cwd: input.cwd, ...m(input) });
+      const args = m(input);
+      if (!args) return ""; // the event carried nothing to act on
+      const { text, notice } = run({ agent: id, session: input.session_id, cwd: input.cwd, ...args });
       if (!text) return "";
       const out = { hookSpecificOutput: { hookEventName: event, additionalContext: text } };
       if (notice) out.systemMessage = notice;

@@ -12,3 +12,4 @@
 #   - project: [next.config.js]            # marker file exists at the project root
 #     use: [frontend-design]
 # skillDirs: [~/my-skills]          # extra directories to scan
+# picker: false                    # turn off the automatic skill shortlist (Claude Code); default on. Global file only

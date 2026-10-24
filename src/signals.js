@@ -27,7 +27,7 @@ export function queryParts({ prompt = "", tool = "", file = "", failure = false,
 }
 
 const RUNNER = /\b(npm (run )?test|pnpm test|yarn test|npx (jest|vitest|mocha)|jest|vitest|mocha|pytest|go test|cargo test|node --test|rspec|phpunit|dotnet test|mvn test|gradle test)\b/;
-const FAILED = /\b\d+ (failed|failing)\b|^FAIL\b|^not ok \d+|AssertionError|✗|✖|\bFAILED\b|Tests? failed/m;
+const FAILED = /\b[1-9]\d* (failed|failing)\b|^FAIL\b|^not ok \d+|AssertionError|✗|✖|\bFAILED\b|Tests? failed/m;
 export const testFailure = ({ command = "", output = "", exitCode = null } = {}) =>
   RUNNER.test(command) && exitCode !== 0 && FAILED.test(output);
 

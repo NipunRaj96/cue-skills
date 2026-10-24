@@ -1,4 +1,8 @@
-import { loadCatalog, entryId as id } from "./catalog.js";
+import { relative } from "node:path";
+import { loadAll, entryId as id } from "./catalog.js";
+import { projectRoot } from "./paths.js";
+import { queryParts, projectSummary } from "./signals.js";
+import { THRESHOLDS, pickStep, planInjection, renderPlan } from "./pick.js";
 import { loadRules } from "./rules.js";
 import { select } from "./select.js";
 import { renderFull, reminder, REMINDER_RESERVE } from "./render.js";
@@ -10,6 +14,7 @@ export const CAP_TOKENS = 2000; // per-turn cap for enforcer bodies, token = cei
 export const REINJECT_EVERY = 10;
 const CAP_CHARS = CAP_TOKENS * 4;
 
+const toks = (s) => Math.ceil(s.length / 4);
 const EMPTY = () => ({ text: "", skills: [] });
 
 // Enforcer (auto agents): count the prompt, then re-inject the full body of standing skills that
@@ -37,12 +42,35 @@ function enforce(selected, st, used) {
   return out;
 }
 
-export function run({ agent, session = "default", phase, reset = false, prompt = "", files = [], cwd, auto = false }) {
+
+// Picker (auto agents): one query from this hook's signals -> shortlist (or a lone winner's body) from what is left of the turn cap.
+// Skipped: standing and already injected skills, everything shortlisted this session, and rules.never.
+function pick({ cards, index, selected, st, rules, cwd, prompt, tool, files, failure, phase, thresholds }) {
+  const root = projectRoot(cwd), f = files[0] ?? "";
+  const rel = f && !relative(root, f).startsWith("..") ? relative(root, f) : f;
+  const first = phase === "prompt" && !st.projectSent;
+  const { parts, label } = queryParts({ prompt: phase === "prompt" ? prompt : "", tool, file: rel, failure, project: first ? projectSummary(root) : "" });
+  if (phase === "prompt") st.projectSent = true;
+  const exclude = new Set([...selected.map((x) => x.entry.name), ...st.picks, ...[...st.seen].map((x) => x.split(":").pop())]);
+  for (const c of cards) if (rules.never.includes(c.name) || rules.never.includes(id(c))) exclude.add(c.name);
+  const d = pickStep({ cards, index, parts, exclude, thresholds });
+  const plan = planInjection(d, { cap: CAP_TOKENS - st.turnTokens });
+  if (!plan.items.length) return null;
+  const text = renderPlan(plan);
+  if (!text) return null;
+  const names = plan.items.map((x) => x.card.name);
+  st.picks.push(...names);
+  st.turnTokens += toks(text);
+  const note = d.kind === "confident" ? `${names[0]} (${label})` : `shortlist: ${names.join(", ")} (${label})`;
+  return { text, note, label, kind: d.kind, names, tokens: toks(text) };
+}
+
+export function run({ agent, session = "default", phase, reset = false, prompt = "", files = [], cwd, auto = false, tool = "", failure = false, thresholds = THRESHOLDS }) {
   cwd ??= process.cwd();
   if (process.env.CUE_DISABLE === "1") return EMPTY();
   try {
     const rules = loadRules(cwd);
-    const catalog = loadCatalog({ cwd, rules });
+    const { entries: catalog, cards, index } = loadAll({ cwd, rules });
     const { selected, unresolved, errors } = select({ prompt, files, cwd, rules, catalog });
     const entries = selected.map((s) => s.entry);
 
@@ -54,15 +82,20 @@ export function run({ agent, session = "default", phase, reset = false, prompt =
       const st = loadSession(agent, session);
       const rem = phase === "tool" ? "" : reminder(entries);
       const enf = auto && phase === "prompt" ? enforce(selected, st, rem.length + 2) : { text: "", notes: [], entries: [], corrected: [] };
+      if (auto && phase === "prompt") st.turnTokens = toks(enf.text); // a new turn: the enforcer takes its share first
       const fresh = entries.filter((e) => !st.seen.has(id(e)) && !enf.entries.includes(e));
       const budget = enf.text ? Math.max(0, CAP_CHARS - enf.text.length - rem.length - 2) : rem ? 9000 - REMINDER_RESERVE : 9000;
       const bodies = renderFull(fresh, budget);
       // auto agents: a body that did not fit stays unseen and is retried next prompt
       const shown = auto ? fresh.filter((e) => bodies.includes(`## Skill: ${e.name}\n`)) : fresh;
       shown.concat(enf.entries).forEach((e) => st.seen.add(id(e)));
-      if (shown.length || enf.entries.length || (auto && phase === "prompt")) saveSession(agent, session, st);
-      text = [enf.text, bodies, rem].filter(Boolean).join("\n");
-      if (enf.notes.length) notice = `cue → ${enf.notes.join("; ")}`;
+      const pk = auto && rules.picker && (phase === "prompt" || phase === "tool")
+        ? pick({ cards, index, selected, st, rules, cwd, prompt, tool, files, failure, phase, thresholds }) : null;
+      if (shown.length || enf.entries.length || pk || (auto && phase === "prompt")) saveSession(agent, session, st);
+      text = [enf.text, bodies, rem, pk?.text].filter(Boolean).join("\n");
+      const notes = [...enf.notes, ...(pk ? [pk.note] : [])];
+      if (notes.length) notice = `cue → ${notes.join("; ")}`;
+      if (pk) logEvent({ agent, session, event: "pick", label: pk.label, mode: pk.kind, picks: pk.names, skills: pk.names, tokens: pk.tokens });
       if (enf.corrected.length) logEvent({ agent, session, event: "drift-corrected", skills: enf.corrected });
     }
     const skills = selected.map((s) => ({ name: s.entry.name, reason: s.reason }));

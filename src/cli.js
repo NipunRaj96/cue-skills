@@ -117,7 +117,7 @@ export async function main(argv) {
         const i = args.indexOf("-n");
         const n = i >= 0 ? parseInt(args[i + 1], 10) || 20 : 20;
         for (const l of readLog(n))
-          say(`${l.ts} ${l.agent} ${l.event} ${(l.skills || []).map((s) => (typeof s === "string" ? s : `${s.name}:${s.reason}`)).join(",")} ${l.chars ?? ""}`.trimEnd());
+          say(`${l.ts} ${l.agent} ${l.event} ${(l.skills || []).map((s) => (typeof s === "string" ? s : `${s.name}:${s.reason}`)).join(",")} ${l.chars ?? ""}${l.mode ? `[${l.mode}, ${l.label}, ${l.tokens} tokens]` : ""}`.trimEnd());
         break;
       }
       case "sync": say(syncAgentsMd(process.cwd())); break;
