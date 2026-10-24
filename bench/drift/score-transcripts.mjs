@@ -5,7 +5,7 @@ import { homedir } from "node:os";
 import { checkReply } from "/Users/hariomkumar/Playground/cue-skills/src/enforce.js";
 
 const P = join(homedir(), ".claude/projects");
-const arms = { ctrl: ["vigorous-blackburn", "cool-montalcini"], cue: ["quizzical-nightingale", "infallible-greider"] };
+const arms = { ctrl: (process.env.CTRL||"vigorous-blackburn,cool-montalcini").split(","), cue: (process.env.CUE||"quizzical-nightingale,infallible-greider").split(",") };
 const latest = (b) => {
   const d = readdirSync(P).find((x) => x.includes(b));
   const fs = readdirSync(join(P, d)).filter((f) => f.endsWith(".jsonl")).map((f) => join(P, d, f));
