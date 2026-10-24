@@ -3,10 +3,10 @@ import { renderFull } from "./render.js";
 import { readChecked } from "./safefile.js";
 import { MAX_SKILL } from "./catalog.js";
 
-// Shortlist-first, tuned on the dev set only (bench/picker/eval.js --tune): maximise hit@shortlist with falseFire <= 0.20, forbidHits <= 1.
-// lo gates the shortlist on the top score; hi + margin admit a lone winner's full body. On dev forbidHits <= 1 is the binding constraint: two UI-ish
-// neutral cases score 8.8, so lo must stay above that (lo 6.5 would reach hit 0.52 but forbidHits 4).
-export const THRESHOLDS = { hi: 24, lo: 9, margin: 1.25 };
+// Shortlist-first, tuned on the dev set only (bench/picker/eval.js --tune): maximise hit@shortlist with falseFire <= 0.20
+// (forbidHits is reported, not constrained: a wrong card costs about 70 tokens). lo gates the shortlist on the top score;
+// hi + margin admit a lone winner's full body.
+export const THRESHOLDS = { hi: 24, lo: 6.25, margin: 1.25 };
 export const CAP_TOKENS = 2000, BODY_MAX_TOKENS = 1500, SHORTLIST_MAX = 3;
 export const SHORTLIST_HEADER = "Skills likely relevant to this task (read the SKILL.md of the one that fits before starting):";
 

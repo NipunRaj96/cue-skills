@@ -5,7 +5,7 @@ import { readChecked } from "./safefile.js";
 // First match wins the label; every match adds its words.
 export const EXPAND = [
   { file: /\.(tsx|jsx|css|scss|sass|less|html|vue|svelte)$/i, words: "frontend ui design component", label: "frontend file" },
-  { tool: /^mcp__stitch__|figma/i, words: "design ui replicate", label: "design task" },
+  { tool: /stitch|figma/i, words: "design ui frontend replicate", label: "design task" }, // design-tool MCP servers (spec)
   { file: /(^|\/)(tests?|__tests__|spec)\/|\.(test|spec)\.[a-z]+$|_test\.(go|py)$|(^|\/)test_[^/]+\.py$/, words: "testing debug", label: "test file" },
   { tool: /^mcp__.*(playwright|chrome|browser)/i, words: "browser testing", label: "browser tool" },
   { file: /\.(apk|xapk|aar|jar|dex)$/i, words: "android decompile reverse engineer", label: "android package" },

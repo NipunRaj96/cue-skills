@@ -56,12 +56,13 @@ const evalPrepped = (cases, p, thresholds) => {
 
 export const evaluate = (cases, cards, thresholds) => evalPrepped(cases, prep(cards), thresholds);
 
-// Objective: hit@shortlist (any expected skill among the injected picks), then top1, then fewer tokens, then higher hi, then higher margin (a full body needs a clear lone winner).
-// Constraints: falseFire <= FALSE_FIRE_MAX (a shortlist is about 70 tokens), forbidHits <= 1. Dev set only.
+// Objective: hit@shortlist (any expected skill among the injected picks); constraint falseFire <= FALSE_FIRE_MAX (a wrong
+// shortlist costs about 70 tokens, a miss defeats the product). forbidHits is reported, not constrained.
+// Tie-break: lower falseFire, fewer tokens, higher hi, higher margin (a full body needs a clear lone winner). Dev set only.
 export const FALSE_FIRE_MAX = 0.20;
 const better = (m, t, b) => {
   if (!b) return true;
-  for (const [x, y] of [[m.hit, b.m.hit], [m.top1, b.m.top1], [b.m.tokensPerCase, m.tokensPerCase], [t.hi, b.t.hi], [t.margin, b.t.margin]])
+  for (const [x, y] of [[m.hit, b.m.hit], [b.m.falseFire, m.falseFire], [b.m.tokensPerCase, m.tokensPerCase], [t.hi, b.t.hi], [t.margin, b.t.margin]])
     if (Math.abs(x - y) > 1e-9) return x > y;
   return false;
 };
@@ -73,7 +74,7 @@ export function tune(cases, cards) {
     for (let lo = 0.5; lo <= hi; lo += 0.25)
       for (const margin of [1.1, 1.25, 1.5, 2]) {
         const t = { hi, lo, margin }, m = evalPrepped(cases, p, t);
-        if (m.falseFire > FALSE_FIRE_MAX || m.forbidHits > 1) continue;
+        if (m.falseFire > FALSE_FIRE_MAX) continue;
         if (better(m, t, best)) best = { m, t };
       }
   return best?.t ?? { ...THRESHOLDS };

@@ -8,8 +8,11 @@ import { queryParts, testFailure, summarize, projectSummary } from "../src/signa
 test("tool and file expansion with label", () => {
   const q = queryParts({ tool: "mcp__stitch__get_screen" });
   assert.equal(q.label, "design task");
-  assert.match(q.parts.map((p) => p.text).join(" "), /design ui replicate/);
+  assert.match(q.parts.map((p) => p.text).join(" "), /design ui frontend replicate/);
   assert.match(q.parts.map((p) => p.text).join(" "), /stitch get screen/);
+  for (const tool of ["mcp__figma__get_file", "mcp__claude_ai_Figma__get_design_context", "mcp__stitch__list_screens"])
+    assert.match(queryParts({ tool }).parts.map((p) => p.text).join(" "), /design ui frontend replicate/, tool);
+  assert.doesNotMatch(queryParts({ prompt: "Replicate the Stitch design" }).parts.map((p) => p.text).join(" "), /frontend/); // no prompt-specific words
   assert.equal(queryParts({ tool: "Edit", file: "src/App.tsx" }).label, "frontend file");
   assert.equal(queryParts({ tool: "Read", file: "src/a.test.js" }).label, "test file");
   assert.equal(queryParts({ prompt: "hi" }).label, "prompt");
