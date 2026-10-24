@@ -1,0 +1,62 @@
+[
+ {
+  "mode": "none",
+  "task": "csv",
+  "repeat": 1,
+  "reply": "The parser uses a **state-tracking approach** with a boolean flag (`inQuotes`) to determine how to interpret characters.\n\n### The Logic\nThe parser iterates through the string character by character. Its behavior depends entirely on whether `inQuotes` is `true` or `false`:\n\n1.  **When `inQuotes` is `false` (Outside a quoted field):**\n    *   **Comma (`,`):** Treated as a **field separator**. The current accumulated `field` string is pushed to the current `row`, and the field is reset.\n    *   **Newline (`\\n` or `\\r`):** Treated as a **row separator**. The current `field` is pushed to the `row`, the `row` is pushed to the `result` array, and both are reset.\n    *   **Double Quote (`\"`):** Switches the state to `inQuotes = true`. The quote itself is not added to the field.\n\n2.  **When `inQuotes` is `true` (Inside a quoted field):**\n    *   **Comma (`,`):** Treated as **literal text**. It is appended directly to the `field` string.\n    *   **Newline (`\\n` or `\\r`):** Treated as **literal text**. It is appended directly to the `field` string.\n    *   **Double Quote (`\"`):** The parser checks the *next* character:\n        *   If the next character is also a double quote (`\"\"`), it is treated as an **escaped quote**. A single `\"` is added to the field, and the parser skips the second quote.\n        *   Otherwise, it is treated as the **closing quote**, switching the state back to `inQuotes = false`.\n\n### Summary Table\n\n| Character | `inQuotes === false` | `inQuotes === true` |\n| :--- | :--- | :--- |\n| `,` | Field Separator $\\rightarrow$ New field | Literal text $\\rightarrow$ Part of field |\n| `\\n` / `\\r` | Row Separator $\\rightarrow$ New row | Literal text $\\rightarrow$ Part of field |\n| `\"` | Start Quote $\\rightarrow$ `inQuotes = true` | End Quote (unless `\"\"`) $\\rightarrow$ `inQuotes = false` |"
+ },
+ {
+  "mode": "none",
+  "task": "paginate",
+  "repeat": 1,
+  "reply": "To test `paginate` with very large inputs, I would focus on two dimensions: **array size** (millions of items) and **page/perPage values** (extreme offsets).\n\n### How I would test it:\n1.  **Stress Testing with Large Arrays**: Generate an array of 10+ million elements and verify that requesting the first, middle, and last pages remains performant.\n2.  **Extreme Offset Tests**: Request a page number that is incredibly high (e.g., `1,000,000,000`) to ensure the math doesn't break or cause unexpected behavior when `start` exceeds the array length.\n3.  **Huge Page Sizes**: Set `perPage` to a value larger than the entire array (e.g., `perPage: 1,000,000` for an array of 100 items) to ensure it gracefully returns all items and sets `hasNext: false`.\n4.  **Boundary Values**: Test with `perPage: 1` and `perPage: items.length` to verify the absolute boundaries of the slicing logic.\n\n### What could go wrong:\n1.  **Memory Exhaustion (OOM)**: While `slice()` is efficient, creating massive arrays for testing can crash the Node.js process if it exceeds the heap limit. I would need to increase memory via `--max-old-space-size` or use a more memory-efficient data structure for testing.\n2.  **Integer Overflow**: JavaScript uses 64-bit floats for numbers, which can safely represent integers up to $2^{53} - 1$ (`Number.MAX_SAFE_INTEGER`). If `page * perPage` exceeds this limit, the indices would lose precision, leading to incorrect slices or crashes.\n3.  **Performance Degradation**: Although `slice` is generally $O(k)$ where $k$ is the page size, the overall time complexity to generate the test data might become the bottleneck rather than the function itself.\n4.  **Unexpected `slice` Behavior**: Passing a `start` index significantly larger than the array length returns an empty array `[]` in JavaScript. While this is technically correct (page past the end is empty), in a real production system, this might be an indicator of a bug in the calling code that should be handled as an error r"
+ },
+ {
+  "mode": "none",
+  "task": "retry",
+  "repeat": 2,
+  "reply": "Two primary weaknesses of this retry helper for production use are:\n\n### 1. Lack of Jitter (Thundering Herd Problem)\nThe delay is perfectly deterministic. In a production environment, if a downstream service goes down and then recovers, all clients that failed at the same time will retry at the exact same millisecond intervals (e.g., everyone retries at 10ms, then 20ms, then 40ms). This creates massive synchronized spikes of traffic that can crash the recovering service again.\n**Solution:** Add \"jitter\" (randomness) to the delay so retries are spread out.\n\n### 2. Lack of `maxDelay` Enforcement\nAlthough `maxDelay` is defined as a parameter in the function signature (line 3), it is **never actually used** in the logic. The `wait` variable will grow indefinitely as long as `attempts` allows. If a user sets a high number of attempts, the delay could quickly grow to several minutes or hours, which is usually undesirable for a request-response cycle.\n**Solution:** Wrap the delay update in a `Math.min()` call:\n`wait = Math.min(wait * factor, maxDelay);`"
+ },
+ {
+  "mode": "none",
+  "task": "slugify",
+  "repeat": 2,
+  "reply": "One edge case where this implementation would surprise a user is when **the slug contains no hyphens within the `maxLength` limit.**\n\n### The Scenario\nIf a user provides a single long word (or a string that becomes one long word after punctuation stripping) and sets a `maxLength`, the current logic fails to truncate it meaningfully.\n\n**Example:**\n`slugify(\"Supercalifragilistic\", { maxLength: 5 })`\n1. The code truncates it to `\"Super\"`.\n2. `slug.lastIndexOf(\"-\")` returns `-1`.\n3. The `if (lastHyphen !== -1)` block is skipped.\n4. The result is `\"Super\"`.\n\nWhile this seems correct, if the requirement is to \"cut at a hyphen boundary,\" a user might expect the function to return an empty string or a specific fallback if no boundary exists, rather than returning a partial word. More critically, if the string was `\"Hello-World\"` and `maxLength` was `4`, it would return `\"Hell\"`, which is a partial word.\n\n### How I would handle it\nTo make the behavior more predictable, I would implement a **fallback strategy**:\n\n1. **Strict Boundary Enforcement**: If no hyphen is found within the `maxLength` window, I would return an empty string (or a custom `fallback` value from the options) to signal that the content could not be truncated without breaking a word.\n2. **Hard Truncation Option**: I would add a boolean option like `allowPartialWords: false`. If `false`, the function only returns the string if it can be cut at a boundary; otherwise, it truncates to the last valid boundary or returns empty.\n\n**Revised Logic Example:**\n```javascript\nif (maxLength && slug.length > maxLength) {\n  const truncated = slug.substring(0, maxLength);\n  const lastHyphen = truncated.lastIndexOf(\"-\");\n  \n  if (lastHyphen !== -1) {\n    slug = truncated.substring(0, lastHyphen);\n  } else {\n    // Handle the edge case: no hyphen found in the window\n    slug = options.allowPartialWords ? truncated : \"\"; \n  }\n}\n```"
+ },
+ {
+  "mode": "manual",
+  "task": "csv",
+  "repeat": 1,
+  "reply": "Parser use `inQuotes` flag.\n\nIf `inQuotes` true:\n- Comma/newline treated as literal text.\n- Only double-quote (`\"`) can change state.\n- Two double-quotes (`\"\"`) escaped to single quote, state stay same.\n\nIf `inQuotes` false:\n- Comma = field separator.\n- Newline (`\\n` or `\\r\\n`) = row separator.\n- Double-quote (`\"`) set `inQuotes` true."
+ },
+ {
+  "mode": "manual",
+  "task": "paginate",
+  "repeat": 2,
+  "reply": "Added `hasNext`. Test pass."
+ },
+ {
+  "mode": "manual",
+  "task": "slugify",
+  "repeat": 1,
+  "reply": "Non-Latin scripts (Chinese, Cyrillic, Arabic) result in empty strings because `[^a-z0-9]+` strips all non-ASCII.\n\nHandle via transliteration library (e.g., `unidecode`) to convert characters to closest Latin equivalent before regex."
+ },
+ {
+  "mode": "cue",
+  "task": "csv",
+  "repeat": 1,
+  "reply": "`inQuotes` flag track state. \n\nIf `inQuotes` true: comma and newline add to field. Double quote `\"\"` escaped to single quote.\n\nIf `inQuotes` false: comma split field, newline split row. Single quote `\"` toggle `inQuotes` true."
+ },
+ {
+  "mode": "cue",
+  "task": "paginate",
+  "repeat": 2,
+  "reply": "Added `hasNext` to `paginate.js` and corresponding test. All tests pass."
+ },
+ {
+  "mode": "cue",
+  "task": "slugify",
+  "repeat": 1,
+  "reply": "Non-Latin scripts (Chinese, Arabic, Cyrillic) become empty strings. Handle with `transliterate` library to map chars to Latin."
+ }
+]
