@@ -40,7 +40,7 @@ After turn `compactAfter` (6) the harness compacts the agent's context where it 
 
 ## Picker eval
 
-Offline eval of the automatic skill picker (BM25F over skill cards: name x3, description and when_to_use x1, body x0.3 capped at 3000 words, plus tool, file, failure and project signals). No model calls. Run 2026-10-20.
+Offline eval of the automatic skill picker (BM25F over skill cards: name x3, description and when_to_use x1, body x0.3 capped at 3000 words, plus tool, file, failure and project signals). No model calls. Shortlist-first policy, run 2026-10-25.
 
 ```
 node bench/picker/freeze.js            # snapshot this machine's skill catalog (with bodies) into cards.json (home dir becomes ~)
@@ -49,16 +49,22 @@ node bench/picker/eval.js --tune       # grid-search thresholds on the dev set (
 node bench/picker/eval.js --holdout    # also print blind held-out metrics
 ```
 
-Shipped `THRESHOLDS = { hi: 24, lo: 8.5, margin: 1.1 }`. Result (blind held-out, `holdout.json`, 70 cases, one run, never used for tuning):
+Policy: when the top score is at least `lo`, inject the top 3 eligible cards as one-line entries under a header that asks the agent to read the SKILL.md of the one that fits. A strong lone winner (`hi` and `margin`) gets its full body instead (cards over 1500 tokens become a Read line). Tuning objective: hit@shortlist (`hit` below: any expected skill among the injected picks), then top1, then fewer tokens; constraints `falseFire <= 0.20` and `forbidHits <= 1`, dev set only.
 
-| set | n | positives | neutral | top1 | hit | falseFire | forbidHits | tokensPerCase | listAllTokens |
-|---|---|---|---|---|---|---|---|---|---|
-| holdout | 70 | 52 | 18 | 0.365 | 0.385 | 0.167 | 1 | 52 | 5676 |
+Shipped `THRESHOLDS = { hi: 24, lo: 9, margin: 1.25 }`.
 
 dev (tuned on, not an estimate of real-world accuracy), `cases.json`, 129 cases:
 
 | set | n | positives | neutral | top1 | hit | falseFire | forbidHits | tokensPerCase | listAllTokens |
 |---|---|---|---|---|---|---|---|---|---|
-| dev | 129 | 100 | 29 | 0.280 | 0.300 | 0.069 | 0 | 20 | 5676 |
+| dev | 129 | 100 | 29 | 0.260 | 0.280 | 0.000 | 0 | 33 | 5676 |
+
+Blind held-out (`holdout.json`, 70 cases, one run of this policy, never used for tuning; the previous policy also looked at this set once):
+
+| set | n | positives | neutral | top1 | hit | falseFire | forbidHits | tokensPerCase | listAllTokens |
+|---|---|---|---|---|---|---|---|---|---|
+| holdout | 70 | 52 | 18 | 0.346 | 0.385 | 0.056 | 3 | 72 | 5676 |
+
+On dev, `forbidHits <= 1` is the binding constraint, not `falseFire`: two UI-flavoured neutral cases (`n-rename-prop-button`, `n-testid-submit`) score 8.8, so `lo` has to stay above that. With the falseFire budget alone, `lo` 6.5 would give dev hit 0.52 at falseFire 0.17 but forbidHits 4. The three held-out Stitch cases fire nothing at `lo` 9 (the `mcp__stitch__` tool signal alone does not reach it).
 
 Label audit: `cases.json` was re-audited blind; 10 cases gained 13 acceptable skills and none were removed (log in `picker/label-audit.md`). `holdout.json` was written by a third independent labeler and is only read by `--holdout` and `test/picker-eval.test.js`. Vocabulary (`EXPAND`, `DEP_WORDS`, `MARKERS`) is convention-level only and no longer fitted to cases. `npm test` gates both sets: dev as a regression guard, holdout against floors set from the one blind run (value minus 0.05).

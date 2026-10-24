@@ -3,10 +3,12 @@ import { renderFull } from "./render.js";
 import { readChecked } from "./safefile.js";
 import { MAX_SKILL } from "./catalog.js";
 
-// Tuned 2026-10-20 on the full dev set (bench/picker/cases.json, grid in eval.js): top1 0.280, hit 0.300, falseFire 0.069, forbidHits 0.
-export const THRESHOLDS = { hi: 24, lo: 8.5, margin: 1.1 };
+// Shortlist-first, tuned on the dev set only (bench/picker/eval.js --tune): maximise hit@shortlist with falseFire <= 0.20, forbidHits <= 1.
+// lo gates the shortlist on the top score; hi + margin admit a lone winner's full body. On dev forbidHits <= 1 is the binding constraint: two UI-ish
+// neutral cases score 8.8, so lo must stay above that (lo 6.5 would reach hit 0.52 but forbidHits 4).
+export const THRESHOLDS = { hi: 24, lo: 9, margin: 1.25 };
 export const CAP_TOKENS = 2000, BODY_MAX_TOKENS = 1500, SHORTLIST_MAX = 3;
-export const SHORTLIST_HEADER = "Relevant skills; read the file of the one that fits.";
+export const SHORTLIST_HEADER = "Skills likely relevant to this task (read the SKILL.md of the one that fits before starting):";
 
 const squash = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 const toks = (s) => Math.ceil(s.length / 4);
@@ -14,8 +16,8 @@ const toks = (s) => Math.ceil(s.length / 4);
 export function decide(scored, t = THRESHOLDS) {
   const [top, next] = scored;
   if (top && top.score >= t.hi && top.score >= t.margin * (next?.score ?? 0)) return { kind: "confident", picks: [top.card] };
-  const picks = scored.filter((x) => x.score >= t.lo).slice(0, SHORTLIST_MAX).map((x) => x.card);
-  return picks.length ? { kind: "shortlist", picks } : { kind: "none", picks: [] };
+  // shortlist-first: the top score opens the gate, then the top SHORTLIST_MAX cards go in whatever they score
+  return top && top.score >= t.lo ? { kind: "shortlist", picks: scored.slice(0, SHORTLIST_MAX).map((x) => x.card) } : { kind: "none", picks: [] };
 }
 
 export function pickStep({ cards, index, parts, exclude = new Set(), thresholds = THRESHOLDS }) {

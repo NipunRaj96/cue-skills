@@ -13,6 +13,10 @@ test("decide: confident, shortlist, none", () => {
   const sl = decide(S(["a", 6], ["b", 5], ["c", 3], ["d", 2.5]), t);
   assert.equal(sl.kind, "shortlist");
   assert.deepEqual(sl.picks.map((c) => c.name), ["a", "b", "c"]);
+  // shortlist-first: the top score opens the gate, then the top 3 go in even when they score under lo
+  const low = decide(S(["a", 3], ["b", 1], ["c", 0.5], ["d", 0.4]), t);
+  assert.deepEqual([low.kind, low.picks.map((c) => c.name)], ["shortlist", ["a", "b", "c"]]);
+  assert.equal(decide(S(["a", 9], ["b", 8]), t).kind, "shortlist"); // no clear lone winner
   assert.equal(decide(S(["a", 1.9]), t).kind, "none");
   assert.equal(decide([], t).kind, "none");
 });
@@ -37,6 +41,6 @@ test("planInjection: body over 1500 tokens becomes a card; cap respected", () =>
 test("renderPlan copy and project path check", () => {
   fixture();
   const txt = renderPlan(planInjection({ kind: "shortlist", picks: [card("a"), card("b")] }));
-  assert.equal(txt, "Relevant skills; read the file of the one that fits.\n- a: about a (/s/a/SKILL.md)\n- b: about b (/s/b/SKILL.md)\n");
+  assert.equal(txt, "Skills likely relevant to this task (read the SKILL.md of the one that fits before starting):\n- a: about a (/s/a/SKILL.md)\n- b: about b (/s/b/SKILL.md)\n");
   assert.equal(renderPlan({ items: [{ card: card("p", 10, { kind: "project", base: "/nope" }), mode: "card" }], tokens: 0 }), "");
 });
