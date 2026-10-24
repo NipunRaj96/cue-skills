@@ -1,11 +1,12 @@
-import { openSync, fstatSync, statSync, readFileSync, closeSync, realpathSync, constants } from "node:fs";
+import { openSync, fstatSync, statSync, readFileSync, readSync, closeSync, realpathSync, constants } from "node:fs";
 import { sep } from "node:path";
 
 // The one reader for files a project (or the user) controls. Checks and read share one fd,
 // so a swap between check and read cannot redirect us.
-// opts: base (project root: path must resolve inside it, single hard link), nofollow, owned.
+// opts: base (project root: path must resolve inside it, single hard link), nofollow, owned,
+// tail (read only the last maxBytes of a larger file instead of refusing it; the cut first line is dropped).
 // Returns {data: string} | {missing: true} | {error: string}
-export function readChecked(path, maxBytes, { base, nofollow = false, owned = false, stat = statSync } = {}) {
+export function readChecked(path, maxBytes, { base, nofollow = false, owned = false, tail = false, stat = statSync } = {}) {
   let fd;
   try {
     fd = openSync(path, constants.O_RDONLY | (constants.O_NONBLOCK ?? 0) | (nofollow ? constants.O_NOFOLLOW ?? 0 : 0));
@@ -16,7 +17,7 @@ export function readChecked(path, maxBytes, { base, nofollow = false, owned = fa
   try {
     const st = fstatSync(fd);
     if (!st.isFile()) return { error: `${path}: not a regular file, ignored` };
-    if (st.size > maxBytes) return { error: `${path}: larger than ${maxBytes / 1024} KB, ignored` };
+    if (st.size > maxBytes && !tail) return { error: `${path}: larger than ${maxBytes / 1024} KB, ignored` };
     const uid = process.getuid?.();
     if (owned && uid !== undefined && st.uid !== uid) return { error: `${path}: owned by another user, ignored` };
     if (base) {
@@ -25,6 +26,12 @@ export function readChecked(path, maxBytes, { base, nofollow = false, owned = fa
       if (!rp.startsWith(rb + sep)) return { error: `${path}: resolves outside the project, ignored` };
       const now = stat(rp); // the path must still name the file we opened
       if (now.dev !== st.dev || now.ino !== st.ino) return { error: `${path}: changed while reading, ignored` };
+    }
+    if (tail && st.size > maxBytes) {
+      const buf = Buffer.alloc(maxBytes);
+      const n = readSync(fd, buf, 0, maxBytes, st.size - maxBytes);
+      const s = buf.toString("utf8", 0, n), nl = s.indexOf("\n");
+      return { data: nl < 0 ? "" : s.slice(nl + 1) };
     }
     return { data: readFileSync(fd, "utf8") };
   } catch (e) {

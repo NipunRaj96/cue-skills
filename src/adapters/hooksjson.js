@@ -67,8 +67,11 @@ export function jsonAdapter({ id, label, status, dir, fileName, spec, map, detec
     handle(event, input) {
       const m = map[event];
       if (!m) return "";
-      const { text } = run({ agent: id, session: input.session_id, cwd: input.cwd, ...m(input) });
-      return text ? JSON.stringify({ hookSpecificOutput: { hookEventName: event, additionalContext: text } }) : "";
+      const { text, notice } = run({ agent: id, session: input.session_id, cwd: input.cwd, ...m(input) });
+      if (!text) return "";
+      const out = { hookSpecificOutput: { hookEventName: event, additionalContext: text } };
+      if (notice) out.systemMessage = notice;
+      return JSON.stringify(out);
     },
   };
 }
