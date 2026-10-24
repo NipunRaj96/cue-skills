@@ -2,7 +2,7 @@ import { relative } from "node:path";
 import { loadAll, entryId as id } from "./catalog.js";
 import { projectRoot } from "./paths.js";
 import { queryParts, projectSummary } from "./signals.js";
-import { THRESHOLDS, pickStep, planInjection, renderPlan } from "./pick.js";
+import { THRESHOLDS, pickStep, planInjection, renderPlan, clean } from "./pick.js";
 import { loadRules } from "./rules.js";
 import { select } from "./select.js";
 import { renderFull, reminder, REMINDER_RESERVE } from "./render.js";
@@ -54,14 +54,15 @@ function pick({ cards, index, selected, st, rules, cwd, prompt, tool, files, fai
   const exclude = new Set([...selected.map((x) => x.entry.name), ...st.picks, ...[...st.seen].map((x) => x.split(":").pop())]);
   for (const c of cards) if (rules.never.includes(c.name) || rules.never.includes(id(c))) exclude.add(c.name);
   const d = pickStep({ cards, index, parts, exclude, thresholds });
-  const plan = planInjection(d, { cap: CAP_TOKENS - st.turnTokens });
+  const plan = planInjection(d, { cap: CAP_TOKENS - st.turnTokens - 1 }); // 1: the newline that joins it to the rest
   if (!plan.items.length) return null;
   const text = renderPlan(plan);
   if (!text) return null;
   const names = plan.items.map((x) => x.card.name);
   st.picks.push(...names);
+  const shownNames = names.map(clean);
   st.turnTokens += toks(text);
-  const note = d.kind === "confident" ? `${names[0]} (${label})` : `shortlist: ${names.join(", ")} (${label})`;
+  const note = d.kind === "confident" ? `${shownNames[0]} (${label})` : `shortlist: ${shownNames.join(", ")} (${label})`;
   return { text, note, label, kind: d.kind, names, tokens: toks(text) };
 }
 
@@ -82,19 +83,22 @@ export function run({ agent, session = "default", phase, reset = false, prompt =
       const st = loadSession(agent, session);
       const rem = phase === "tool" ? "" : reminder(entries);
       const enf = auto && phase === "prompt" ? enforce(selected, st, rem.length + 2) : { text: "", notes: [], entries: [], corrected: [] };
-      if (auto && phase === "prompt") st.turnTokens = toks(enf.text); // a new turn: the enforcer takes its share first
+      if (auto && phase === "prompt") st.turnTokens = 0; // a new turn
       const fresh = entries.filter((e) => !st.seen.has(id(e)) && !enf.entries.includes(e));
-      const budget = enf.text ? Math.max(0, CAP_CHARS - enf.text.length - rem.length - 2) : rem ? 9000 - REMINDER_RESERVE : 9000;
+      // one CAP_TOKENS budget per turn for auto agents, spent in order: enforcer, reminder, rule bodies, picks
+      const spent = auto ? (phase === "prompt" ? enf.text.length + rem.length + 2 : st.turnTokens * 4 + 1) : 0;
+      const budget = auto ? Math.max(0, CAP_CHARS - spent) : enf.text ? Math.max(0, CAP_CHARS - enf.text.length - rem.length - 2) : rem ? 9000 - REMINDER_RESERVE : 9000;
       const bodies = renderFull(fresh, budget);
       // auto agents: a body that did not fit stays unseen and is retried next prompt
       const shown = auto ? fresh.filter((e) => bodies.includes(`## Skill: ${e.name}\n`)) : fresh;
       shown.concat(enf.entries).forEach((e) => st.seen.add(id(e)));
+      if (auto) st.turnTokens = phase === "prompt" ? toks([enf.text, bodies, rem].filter(Boolean).join("\n")) : st.turnTokens + toks(bodies);
       const pk = auto && rules.picker && (phase === "prompt" || phase === "tool")
         ? pick({ cards, index, selected, st, rules, cwd, prompt, tool, files, failure, phase, thresholds }) : null;
       if (shown.length || enf.entries.length || pk || (auto && phase === "prompt")) saveSession(agent, session, st);
       text = [enf.text, bodies, rem, pk?.text].filter(Boolean).join("\n");
       const notes = [...enf.notes, ...(pk ? [pk.note] : [])];
-      if (notes.length) notice = `cue → ${notes.join("; ")}`;
+      if (notes.length) notice = clean(`cue → ${notes.join("; ")}`);
       if (pk) logEvent({ agent, session, event: "pick", label: pk.label, mode: pk.kind, picks: pk.names, skills: pk.names, tokens: pk.tokens });
       if (enf.corrected.length) logEvent({ agent, session, event: "drift-corrected", skills: enf.corrected });
     }

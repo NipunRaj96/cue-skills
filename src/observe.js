@@ -7,6 +7,7 @@ import { loadSession, saveSession } from "./state.js";
 import { readChecked } from "./safefile.js";
 import { home } from "./paths.js";
 import { logEvent } from "./log.js";
+import { clean } from "./pick.js";
 
 const TAIL = 512 * 1024;
 const isString = (x) => typeof x === "string" && x !== "";
@@ -49,5 +50,5 @@ export function observe(input) {
   for (const f of found) s.drift[f.name] = f.reason;
   saveSession("claude", session, s);
   logEvent({ agent: "claude", session, event: "drift-detected", skills: found });
-  return JSON.stringify({ systemMessage: `cue → ${found.map((f) => `${f.name} drift detected: ${f.reason}; re-applying next turn`).join("; ")}` });
+  return JSON.stringify({ systemMessage: clean(`cue → ${found.map((f) => `${f.name} drift detected: ${f.reason}; re-applying next turn`).join("; ")}`) });
 }

@@ -10,7 +10,9 @@ export const THRESHOLDS = { hi: 24, lo: 6.25, margin: 1.25 };
 export const CAP_TOKENS = 2000, BODY_MAX_TOKENS = 1500, SHORTLIST_MAX = 3;
 export const SHORTLIST_HEADER = "Skills likely relevant to this task (read the SKILL.md of the one that fits before starting):";
 
-const squash = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+// one line, no control characters: skill names, descriptions and paths go into model context and the visible line
+export const clean = (s) => String(s ?? "").replace(/[\s\p{Cc}]+/gu, " ").trim();
+const squash = (s, n) => clean(s).slice(0, n);
 const toks = (s) => Math.ceil(s.length / 4);
 
 export function decide(scored, t = THRESHOLDS) {
@@ -26,8 +28,8 @@ export function pickStep({ cards, index, parts, exclude = new Set(), thresholds 
   return decide(scored, thresholds);
 }
 
-export const cardBlock = (c) => `## Skill: ${c.name}\n${squash(c.description, 160)}\nRead ${c.path} and follow it.\n`;
-export const listLine = (c) => `- ${c.name}: ${squash(c.description, 100)} (${c.path})`;
+export const cardBlock = (c) => `## Skill: ${clean(c.name)}\n${squash(c.description, 160)}\nRead ${clean(c.path)} and follow it.\n`;
+export const listLine = (c) => `- ${clean(c.name)}: ${squash(c.description, 100)} (${clean(c.path)})`;
 
 export function planInjection(decision, { cap = CAP_TOKENS } = {}) {
   const items = [];

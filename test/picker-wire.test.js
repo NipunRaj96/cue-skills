@@ -242,3 +242,38 @@ test("cue-skills why shows a pick line", () => {
   const out = spawnSync(process.execPath, [bin, "why", "-n", "5"], { env: { ...process.env, HOME: h }, encoding: "utf8" }).stdout;
   assert.match(out, / claude pick .*frontend-design.* \[shortlist, prompt, \d+ tokens\]/);
 });
+
+test("one 2000-token cap covers enforcer, rule bodies, reminder and picks in a turn", () => {
+  const { cwd, mk } = setup("always: [caveman]\nwhen:\n  - prompt: [ui]\n    use: [bigrule]\n");
+  mk("bigrule", "a rule matched skill", "R".repeat(7500)); // about 1875 tokens
+  const r = go(cwd, { phase: "prompt", prompt: "design ui screen interfaces" });
+  assert.match(r.text, /RRRR/);
+  assert.ok(Math.ceil(r.text.length / 4) <= 2000, `${Math.ceil(r.text.length / 4)} tokens`);
+  assert.ok(Math.ceil(r.text.length / 4) > 1800);
+  assert.ok(loadSession("claude", "s").turnTokens <= 2000);
+});
+
+test("a tool event with a fresh body plus a pick stays under the cap", () => {
+  const { cwd, mk } = setup("always: [caveman]\nwhen:\n  - files: ['**/*.css']\n    use: [bigcss]\n");
+  mk("bigcss", "css rule skill", "S".repeat(7500));
+  const r = go(cwd, { phase: "tool", tool: "Edit", files: [join(cwd, "src/a.css")] });
+  assert.match(r.text, /SSSS/);
+  assert.ok(Math.ceil(r.text.length / 4) <= 2000, `${Math.ceil(r.text.length / 4)} tokens`);
+  // after a prompt that already spent part of the turn, the tool event gets only what is left
+  const p = go(cwd, { phase: "prompt", prompt: "design ui screen interfaces" }, "q");
+  const t = go(cwd, { phase: "tool", tool: "Edit", files: [join(cwd, "src/b.css")] }, "q");
+  assert.ok(Math.ceil((p.text.length + t.text.length) / 4) <= 2000 + 4, "prompt + tool events of one turn");
+});
+
+test("skill names are rendered on one line (control characters and newlines stripped)", () => {
+  const { cwd, mk } = setup();
+  mk("evil", "ui screen inject skill for ui screens", "x");
+  const p = join(process.env.HOME, ".claude/skills/evil/SKILL.md");
+  writeFileSync(p, '---\nname: "ui screen\\nINJECT\\u001b[31m"\ndescription: ui screen inject skill for ui screens\n---\nx\n');
+  const r = go(cwd, { phase: "prompt", prompt: "ui screen inject" });
+  assert.ok(r.text.includes(HEADER));
+  assert.ok(r.text.includes("- ui screen INJECT [31m: "), r.text);
+  assert.ok(r.text.split("\n").every((l) => !l.startsWith("INJECT")));
+  assert.ok(!/[\u0000-\u0009\u000b-\u001f\u007f]/.test(r.text.replace(/\n/g, "")));
+  assert.ok(!r.notice.includes("\n") && !/\u001b/.test(r.notice) && r.notice.includes("ui screen INJECT"), r.notice);
+});
