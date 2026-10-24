@@ -1,6 +1,8 @@
 import { join } from "node:path";
 import { checkReply } from "./enforce.js";
 import { loadRules } from "./rules.js";
+import { loadCatalog } from "./catalog.js";
+import { select } from "./select.js";
 import { loadSession, saveSession } from "./state.js";
 import { readChecked } from "./safefile.js";
 import { home } from "./paths.js";
@@ -34,12 +36,13 @@ export function observe(input) {
   const reply = lastReply(t.data);
   if (!reply) return "";
   const rules = loadRules(cwd);
+  // standing skills exactly as the engine resolves them: uninstalled or vetoed ones are never flagged
+  const catalog = loadCatalog({ cwd, rules });
+  const { selected } = select({ prompt: "", files: [], cwd, rules, catalog });
   const found = [];
-  for (const id of rules.always) {
-    const name = id.split(":").pop();
-    if (rules.never.includes(id) || rules.never.includes(name)) continue;
-    const r = checkReply(name, reply);
-    if (r && !r.ok) found.push({ name, reason: r.reason });
+  for (const { entry, reason } of selected) {
+    const r = reason === "always" ? checkReply(entry.name, reply) : null;
+    if (r && !r.ok) found.push({ name: entry.name, reason: r.reason });
   }
   if (!found.length) return "";
   const s = loadSession("claude", session);

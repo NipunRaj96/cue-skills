@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, writeFileSync, symlinkSync, appendFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, symlinkSync, appendFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -210,4 +210,60 @@ test("why shows drift events", () => {
   const r = spawnSync(process.execPath, [fileURLToPath(new URL("../bin/cue-skills.js", import.meta.url)), "why"], { env: { ...process.env, HOME: f.h }, encoding: "utf8" });
   assert.match(r.stdout, /claude drift-detected caveman:\d+\.\d% filler words/);
   assert.match(r.stdout, /claude drift-corrected caveman:/);
+});
+
+test("uninstalled standing skill: no systemMessage, no flag, nothing logged", () => {
+  const f = setup();
+  rmSync(join(f.h, ".claude/skills/caveman"), { recursive: true });
+  writeFileSync(join(f.h, ".cue/rules.yaml"), "always: [caveman]\n");
+  writeFileSync(f.tpath, asst([text(VERBOSE)]) + "\n");
+  assert.equal(stop(f), "");
+  assert.deepEqual(loadSession("claude", "s").drift, {});
+  assert.ok(!readLog(20).some((l) => l.event === "drift-detected"));
+});
+
+test("stale drift flag for a skill that is not selected is dropped, not repeated", () => {
+  const f = setup();
+  start(f);
+  writeFileSync(f.tpath, asst([text(VERBOSE)]) + "\n");
+  stop(f);
+  writeFileSync(join(f.h, ".cue/rules.yaml"), "always: [ponytail]\n");
+  prompt(f);
+  assert.deepEqual(loadSession("claude", "s").drift, {});
+});
+
+test("a skill named like an Object.prototype key does not break the enforcer", () => {
+  const f = setup();
+  mkdirSync(join(f.h, ".claude/skills/constructor"), { recursive: true });
+  writeFileSync(join(f.h, ".claude/skills/constructor/SKILL.md"), "---\nname: constructor\ndescription: d\n---\nCTOR-BODY\n");
+  writeFileSync(join(f.h, ".cue/rules.yaml"), "always: [constructor, toString]\n");
+  start(f);
+  for (let i = 1; i <= 10; i++) {
+    const o = prompt(f);
+    assert.match(ctx(o), /Active skills: constructor/, `prompt ${i}`);
+    if (i === 10) assert.match(ctx(o), /CTOR-BODY/);
+  }
+});
+
+test("drifted skill gets its full body before periodic ones, whatever the rule order", () => {
+  const f = setup();
+  writeFileSync(join(f.h, ".cue/rules.yaml"), "always: [ponytail, caveman]\n");
+  start(f);
+  writeFileSync(f.tpath, asst([text(VERBOSE)]) + "\n");
+  for (let i = 1; i <= 9; i++) prompt(f);
+  stop(f);
+  const o = prompt(f);
+  assert.match(ctx(o), /CAVEMAN-BODY/);
+  assert.doesNotMatch(ctx(o), /PONYTAIL-BODY/);
+  assert.match(ctx(o), /## Skill: ponytail\nRead /);
+  assert.equal(o.systemMessage, "cue → caveman re-applied (drift); ponytail re-applied (every 10 turns)");
+});
+
+test("the whole turn, separators included, stays within the cap", () => {
+  const f = setup("c".repeat(7900)); // body just under the cap: reminder + joins must not push it over
+  start(f);
+  writeFileSync(f.tpath, asst([text(VERBOSE)]) + "\n");
+  stop(f);
+  const o = prompt(f);
+  assert.ok(ctx(o).length <= 8000, String(ctx(o).length));
 });

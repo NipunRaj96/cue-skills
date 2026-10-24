@@ -14,15 +14,18 @@ const EMPTY = () => ({ text: "", skills: [] });
 
 // Enforcer (auto agents): count the prompt, then re-inject the full body of standing skills that
 // drifted (correction first) or have no checker (every REINJECT_EVERY prompts). Bodies are admitted
-// in standing order; one that would pass the cap degrades to a Read card inside renderFull.
+// drifted first, then standing order; one that would pass the cap degrades to a Read card inside renderFull.
 function enforce(selected, st, used) {
   const turn = ++st.turns;
   const out = { text: "", notes: [], entries: [], corrected: [] };
-  for (const { entry: e, reason } of selected) {
-    if (reason !== "always") continue;
-    const drift = st.drift[e.name];
-    const periodic = !Object.hasOwn(CHECKERS, e.name) && turn % REINJECT_EVERY === 0;
-    if (!drift && !periodic) continue;
+  const standing = selected.filter((x) => x.reason === "always").map((x) => x.entry);
+  // a flag for a skill that is not selected (uninstalled, unresolved, vetoed) can never be acted on
+  for (const k of Object.keys(st.drift)) if (!standing.some((e) => e.name === k)) delete st.drift[k];
+  const todo = standing
+    .map((e) => ({ e, drift: Object.hasOwn(st.drift, e.name) ? st.drift[e.name] : undefined }))
+    .filter((x) => x.drift || (!Object.hasOwn(CHECKERS, x.e.name) && turn % REINJECT_EVERY === 0))
+    .sort((a, b) => !!b.drift - !!a.drift); // a drifted skill is the active failure: full body first
+  for (const { e, drift } of todo) {
     const head = drift ? `Previous reply did not follow ${e.name}: ${drift.slice(0, 200)}. Follow it from now on.\n` : "";
     const body = renderFull([e], CAP_CHARS - used - out.text.length - head.length);
     if (!body) continue; // no room: keep the flag for the next prompt
@@ -50,9 +53,9 @@ export function run({ agent, session = "default", phase, reset = false, prompt =
       if (reset) resetState(agent, session);
       const st = loadSession(agent, session);
       const rem = phase === "tool" ? "" : reminder(entries);
-      const enf = auto && phase === "prompt" ? enforce(selected, st, rem.length) : { text: "", notes: [], entries: [], corrected: [] };
+      const enf = auto && phase === "prompt" ? enforce(selected, st, rem.length + 2) : { text: "", notes: [], entries: [], corrected: [] };
       const fresh = entries.filter((e) => !st.seen.has(id(e)) && !enf.entries.includes(e));
-      const budget = enf.text ? Math.max(0, CAP_CHARS - enf.text.length - rem.length) : rem ? 9000 - REMINDER_RESERVE : 9000;
+      const budget = enf.text ? Math.max(0, CAP_CHARS - enf.text.length - rem.length - 2) : rem ? 9000 - REMINDER_RESERVE : 9000;
       const bodies = renderFull(fresh, budget);
       // auto agents: a body that did not fit stays unseen and is retried next prompt
       const shown = auto ? fresh.filter((e) => bodies.includes(`## Skill: ${e.name}\n`)) : fresh;

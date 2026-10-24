@@ -63,6 +63,8 @@ A surface is one config home. Products that share a config home between their CL
 | Gemini CLI | CLI | experimental |
 | Cursor | IDE, `cursor-agent` CLI | experimental |
 
+Drift enforcement (Claude Code only) assumes the default `~/.claude` location; with `CLAUDE_CONFIG_DIR` set it silently does nothing.
+
 Codex requires you to trust the new hooks once through `/hooks`. Antigravity does not expose the prompt text, so `prompt` rules do not apply there.
 
 ## Commands
