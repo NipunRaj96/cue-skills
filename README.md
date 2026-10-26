@@ -84,9 +84,3 @@ Rules live in `~/.cue/rules.yaml`. A project's `.cue/rules.yaml` is ignored unti
 ## Credits
 
 Created by Nipun Kumar.
-
-## License
-
-Copyright (c) 2026 Nipun Kumar. All rights reserved.
-
-This repository is published for reading and reference only. No license is granted to use, copy, modify, or distribute the code or the design without the author's written permission.
