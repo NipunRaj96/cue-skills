@@ -6,3 +6,5 @@ __pycache__/
 .superpowers/
 bench/results/
 bench/picker/.embcache.json
+.DS_Store
+.claude/

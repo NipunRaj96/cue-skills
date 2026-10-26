@@ -1,7 +1,7 @@
 {
   "name": "cue-skills",
   "version": "0.1.0",
-  "description": "Right skill, right moment. Makes coding agents use the right skill automatically.",
+  "description": "Archived experiment: inject coding-agent skills via hooks. See README for why it failed.",
   "license": "MIT",
   "author": "Nipun Kumar <nipunraj2004@gmail.com>",
   "homepage": "https://github.com/NipunRaj96/cue-skills",
@@ -33,5 +33,11 @@
   "scripts": {
     "test": "node --test test/*.test.js"
   },
-  "files": ["bin","src/*.js","src/adapters","plugins","templates"]
+  "files": [
+    "bin",
+    "src/*.js",
+    "src/adapters",
+    "plugins",
+    "templates"
+  ]
 }

@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { checkReply } from "/Users/hariomkumar/Playground/cue-skills/src/enforce.js";
+import { checkReply } from "../../src/enforce.js";
 
 const P = join(homedir(), ".claude/projects");
 const arms = { ctrl: (process.env.CTRL||"vigorous-blackburn,cool-montalcini").split(","), cue: (process.env.CUE||"quizzical-nightingale,infallible-greider").split(",") };

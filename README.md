@@ -1,105 +1,85 @@
 # cue-skills
 
-**Right skill, right moment.**
+> **Status: archived experiment.** Cue works as software but did not solve the problem it was built for. This README explains the idea, what was built, how it was tested, and why it failed, so others can skip the dead ends.
 
-Developers collect skills from GitHub (caveman, ponytail, superpowers, frontend-design and hundreds more), but they rarely get used when they should:
+## The idea
+
+Developers who use coding agents (Claude Code, Codex, Antigravity, OpenCode, OpenClaw and others) collect skills from GitHub: caveman, ponytail, superpowers, graphify, frontend-design and hundreds more. In practice these skills rarely get used when they should:
 
 1. **You forget** to invoke them.
-2. **You don't know** which of 200 installed skills fits the task.
-3. **The agent chooses poorly** once hundreds of skill descriptions crowd its context.
-4. **The agent forgets too.** Ten turns in, or after a context compaction, it drifts back to its defaults.
+2. **You don't know** which of 100+ installed skills fits the task.
+3. **The agent chooses poorly.** It is supposed to pick skills from their descriptions, but often doesn't.
+4. **The agent drifts.** A skill that is followed at turn 1 is ignored by turn 10.
 
-Cue takes skill choice out of your memory and the agent's judgment:
+Cue's goal was to make the agent use the right skill at the right moment, with no human intervention, and to cut token usage while doing it.
 
-- It applies your rules: `always`, `never`, and `when` conditions on prompt words, files and project markers.
-- It injects the matching skills automatically through each agent's hooks or plugins.
-- It re-injects them after compaction and keeps a one-line reminder on every prompt, to fight drift.
-- It shows what it injected and why (`cue-skills why`).
+## What was built
 
-Picking skills by meaning and measuring token savings are planned.
+| Version | What it does |
+|---|---|
+| **v0.1** ([npm](https://www.npmjs.com/package/cue-skills)) | A rules engine (`always`, `never`, and `when` on prompt words, files and project markers). It injects skill text through each agent's hooks or plugins, with adapters for 7 agents. It re-injects after compaction and adds a per-prompt reminder. |
+| **v0.1 hardening** | An independent security audit found 1 critical and 3 high issues: repo-controlled symlinks, auto-trusted project rules, and skill-name hijacking. All of them were fixed. Project rules now need `cue-skills trust`, and all project files go through one safe reader. |
+| **v0.2** (this branch) | Claude Code only. It adds two parts:<br>• **Picker:** BM25 over skill cards plus bodies. It reads signals from prompts, tool calls (including MCP), files, test failures and project dependencies. When unsure, it injects a top-3 shortlist.<br>• **Drift enforcer:** a Stop hook scores each reply against standing skills (for example caveman's filler-word ratio) and re-injects the skill on the next turn when the reply drifts. |
 
-Adapters for Claude Code, Antigravity, OpenCode, OpenClaw, Codex, Gemini CLI and Cursor; see Supported surfaces.
+There are 202 tests. Every hook fails open (an error means no injection, never a blocked agent), and Cue makes no network calls.
 
-## Install
+## How it was tested
 
-```sh
-npm i -g cue-skills && cue-skills init
-```
+Everything below is in [`docs/`](docs). The raw harnesses are in [`bench/`](bench).
 
-`init` detects the agents installed on your machine, registers Cue with each, and creates `~/.cue/rules.yaml` from a commented template if the file is missing. It needs Node 18 or later. A PyPI package (`pip install cue-skills`) runs the same CLI through `npx`, but PyPI users must still `npm i -g cue-skills` before running `cue-skills init`, because `init` refuses to run from the npx cache.
+| Experiment | Result |
+|---|---|
+| **Native baseline**: 10 realistic tasks in Claude Code with 99 skills installed and no Cue ([native-baseline.md](docs/native-baseline.md)) | A fitting skill was used in **1 of 10** sessions. The problem is real. |
+| **Same 10 tasks with Cue's picker live** | **3 of 10**, of which at most 2 are attributable to Cue. In 3 sessions the right skill was on Cue's shortlist and the agent ignored it. |
+| **Offline picker eval**: 129 dev cases plus a 70-case blind holdout ([bench/picker](bench/picker)) | Ranking is decent: the right skill is in the top 3 for about 70% of cases. Deciding *when* to fire is hard: hit@shortlist was 0.64 with a 33% false-fire rate. Local embeddings (nomic-embed-text) added only 2–4 points, which is not worth the dependency. |
+| **Drift enforcer, clean A/B**: 4 Claude Code sessions, 12-turn script, Cue vs control ([enforcer-live-test.md](docs/enforcer-live-test.md)) | Filler words dropped about **40%** and prose words about **15%**, but **output tokens did not drop**. They rose about 8%, within noise. |
+| **Early token benchmark (v0.1)**: 5 agents, caveman and ponytail always on | About −80% output tokens on Claude Code. But this measured caveman itself, which its own plugin already delivers. Cue added nothing on top. |
 
-## Rules
+## Why it failed
 
-Rules live in `~/.cue/rules.yaml` (global) and `<project root>/.cue/rules.yaml` (project). Project lists append to global lists, and duplicates are dropped. A project's `.cue/rules.yaml` can inject skill text, so it is ignored until you run `cue-skills trust` in that project (see [Security and trust](#security-and-trust)).
+1. **Injected context is a hint, not an instruction.** Hooks can only add text next to the user's prompt. Models weigh that text far below the task itself.
+   - Shortlists were ignored.
+   - Drift corrections were followed for a turn, then lost.
+   - The one thing that worked was loading a skill's full content as the main instruction (one picker case, and caveman at session start).
+2. **Style is not size.** Making replies terse removes filler words, but the content the prompt demands (code, explanations, tool calls) stays. Output tokens did not move.
+3. **Cue adds tokens.** Every injected body and reminder is input. A tool whose goal is saving tokens must save more than it injects, and Cue didn't.
+4. **The always-on half already exists.** Skills like caveman and ponytail ship their own hooks. Routing on top of them added cost, not value.
+5. **We validated too late.** Seven agent adapters and a full security hardening were built before the core hypothesis ("injection changes behaviour") was tested. Testing it first would have taken a day.
 
-```yaml
-always: [caveman, ponytail]       # active every session, in priority order
-never: [some-skill]               # never injected; wins over everything
-when:
-  - prompt: [design, ui, landing page]   # case-insensitive word or phrase match on the user prompt
-    use: [frontend-design]
-  - files: ["**/*.tsx", "**/*.css"]      # glob match on files the agent reads or edits (Claude Code only)
-    use: [frontend-design]
-  - project: [next.config.js]            # marker file exists at the project root
-    use: [frontend-design]
-skillDirs: [~/my-skills]          # extra directories to scan
-```
+## Lessons for anyone building in this space
 
-Skills are found in the standard skill folders of each agent, in installed Claude Code plugins, and in `skillDirs`. Use `plugin:name` to pick a skill from a specific plugin.
+- **Measure the native baseline first.** It took one afternoon and changed the whole direction.
+- **Isolate A/B arms properly.** Claude Code reloads global hooks live, which contaminated our first A/B. Newly created project-level `settings.local.json` files are *not* hot-loaded. Gate behaviour per arm with project rules instead.
+- **Keep eval sets honest.** Write labels independently of the code. Use a blind holdout and look at it once. Our first "63% accuracy" came from vocabulary fitted to the dev cases; the honest number was 38%.
+- **Put persistent behaviour where it has authority.** That means the system prompt (Claude Code output styles), not per-turn hints.
+- **Most tokens in coding sessions are input** (file reads, tool output, history). Input compression is probably a bigger lever than output style; see projects like headroom.
 
-`files` globs: `**` matches across directories only as a whole path segment (`src/**/x.ts`). Inside a segment, as in `src/**.ts`, it acts like `*`. A trailing `a/**` also matches `a`.
+## What might work instead (untested)
 
-## Supported surfaces
+- **Skills as output styles.** Generate a Claude Code output style from your standing skills, so they live in the system prompt and survive compaction at near-zero cost. This is the one cheap experiment we didn't run.
+- **Skills as subagents.** Turn a situational skill into a `.claude/agents/<skill>.md` agent, so the skill *is* the agent's system prompt rather than a hint.
+- **LLM routing.** Use a `type: "prompt"` hook with a small, fast model to decide which skill applies, instead of keyword matching.
+- **An API-level proxy.** Place skills in the real system block and compress tool output, for any agent.
 
-A surface is one config home. Products that share a config home between their CLI and IDE need one adapter. Tested means checked against the real agent; experimental means built from the agent's documentation.
+## Repository map
 
-| Product | Surfaces | Status |
-|---|---|---|
-| Claude Code | CLI, desktop Code tab, VS Code and JetBrains extensions | tested (CLI) |
-| Antigravity | agy CLI, App and IDE (shared hooks file) | tested (agy CLI); App/IDE experimental |
-| OpenCode | TUI/CLI, desktop app | tested |
-| OpenClaw | gateway, every channel | tested |
-| Codex | CLI, IDE extension, desktop app | experimental |
-| Gemini CLI | CLI | experimental |
-| Cursor | IDE, `cursor-agent` CLI | experimental |
+| Path | Contents |
+|---|---|
+| `src/` | Engine: catalog, rules, picker (`bm25`, `signals`, `pick`), enforcer (`enforce`, `observe`), safe file reads, trust. |
+| `src/adapters/`, `plugins/` | Adapters for Claude Code, Codex, Gemini CLI, Antigravity, Cursor, OpenCode and OpenClaw. |
+| `bench/` | Token benchmark, drift suite, picker eval (cases, holdout, label audit, embedding spike). |
+| `docs/` | Experiment write-ups, plus designs and plans under `docs/superpowers/`. |
+| `test/` | `node --test test/*.test.js` |
 
-Drift enforcement (Claude Code only) assumes the default `~/.claude` location; with `CLAUDE_CONFIG_DIR` set it silently does nothing.
-
-Codex requires you to trust the new hooks once through `/hooks`. Antigravity does not expose the prompt text, so `prompt` rules do not apply there.
-
-## Commands
-
-- `cue-skills init [--only id,id]`: install into detected agents. Ids: claude, codex, gemini, antigravity, cursor, opencode, openclaw.
-- `cue-skills uninstall`: remove Cue from every agent it was installed into.
-- `cue-skills scan`: rebuild the skill catalog and print counts per root.
-- `cue-skills list`: print the catalog.
-- `cue-skills status`: show the project-rules trust state, rule errors, duplicate skill names, active skills for the current directory, unresolved names, and each agent's state. `stale` marks an OpenCode or OpenClaw plugin whose engine path no longer exists; run `init` again to fix it.
-- `cue-skills why [-n N]`: print recent injections from `~/.cue/log.jsonl`.
-- `cue-skills sync`: write the always-skills into `./AGENTS.md` (and a Cursor rule when `.cursor` exists). It refuses symlinks and anything outside the project.
-- `cue-skills trust [--revoke]`: trust (or stop trusting) the current project's `.cue/rules.yaml`.
-
-Set `CUE_DISABLE=1` to turn injection off without uninstalling.
-
-## Security and trust
-
-Anything a repository controls is untrusted until you opt in.
-
-- Project rules (`<project root>/.cue/rules.yaml`) are ignored until you run `cue-skills trust` in the project. Trust is stored in `~/.cue/trusted.json` as a hash of the file, so any edit revokes it; run `trust` again after reviewing the change. `cue-skills trust --revoke` removes it, and `cue-skills status` shows the state. The file must be a regular file you own, at most 64 KB.
-- Project skill folders (`.claude/skills`, `.agents/skills`, `.opencode/skills`) are scanned only in a trusted project. Project `skillDirs` must be relative and stay inside the repo. Symlinks inside the project are never followed, and a `SKILL.md` over 256 KB or that is not a regular file is skipped.
-- Project rules cannot override your own: a project skill never replaces a skill named in your global rules, and a project `never` can only remove skills that project added.
-- The project root is the nearest `.git` you own, never at or above your home directory.
-- `sync` only writes regular files inside the project.
-- Hooks fail open: any error means no injection, never a blocked agent.
-- Cue makes no network calls.
-- `~/.cue` is private to your user (mode 0700; state, log and trust files 0600).
-
-## Uninstall
+## If you still want to try it
 
 ```sh
+npm i -g cue-skills && cue-skills init     # installs hooks into detected agents
+cue-skills status                          # what's active and why
 cue-skills uninstall && npm rm -g cue-skills
 ```
 
-Config edits keep a `.bak` copy of the original file. Your own hooks are left untouched. The `.bak` copies hold the original config as it was, including any secrets in it. Cue never deletes them; remove them yourself after uninstalling.
+Rules live in `~/.cue/rules.yaml`. A project's `.cue/rules.yaml` is ignored until you run `cue-skills trust` in that project. Config edits keep a `.bak` copy of the original file, and that copy can contain secrets from the original, so delete it yourself after uninstalling.
 
 ## Credits
 
