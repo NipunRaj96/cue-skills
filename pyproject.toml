@@ -7,7 +7,6 @@ name = "cue-skills"
 version = "0.1.0"
 description = "Right skill, right moment. Makes coding agents use the right skill automatically."
 readme = "README.md"
-license = "MIT"
 requires-python = ">=3.9"
 authors = [{ name = "Nipun Kumar", email = "nipunraj2004@gmail.com" }]
 keywords = ["claude-code", "codex", "antigravity", "opencode", "agent-skills", "mcp"]
@@ -21,7 +20,7 @@ Issues = "https://github.com/NipunRaj96/cue-skills/issues"
 cue-skills = "cue_skills:main"
 
 [tool.hatch.build.targets.sdist]
-include = ["src/cue_skills", "README.md", "LICENSE", "pyproject.toml"]
+include = ["src/cue_skills", "README.md", "pyproject.toml"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cue_skills"]
